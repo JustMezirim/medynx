@@ -3,15 +3,15 @@ import { Heart, Activity, TrendingUp, Clock } from "lucide-react"
 
 export function HealthTips() {
   return (
-    <Card className="mt-8 border-0 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
-        <CardTitle className="flex items-center space-x-2">
-          <Heart className="h-5 w-5 text-green-600" />
-          <span>Daily Health Tips</span>
+    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+      <CardHeader>
+        <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+          <Heart className="h-5 w-5 mr-2" />
+          Daily Health Tips
         </CardTitle>
         <CardDescription>Personalized recommendations for better health</CardDescription>
       </CardHeader>
-      <CardContent className="p-6">
+      <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-100">
             <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">

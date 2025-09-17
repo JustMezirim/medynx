@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
+    const { id } = await params
     const doctor = await User.findOne({
-      _id: params.id,
+      _id: id,
       role: "doctor",
       isActive: true,
       isVerified: true

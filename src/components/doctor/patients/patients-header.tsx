@@ -1,13 +1,10 @@
-import { Button } from "@/components/ui/button"
-import { Users, Download, UserPlus } from "lucide-react"
-import Link from "next/link"
+import { Users } from "lucide-react"
 
 interface PatientsHeaderProps {
   patientCount: number
-  onExport: () => void
 }
 
-export function PatientsHeader({ patientCount, onExport }: PatientsHeaderProps) {
+export function PatientsHeader({ patientCount }: PatientsHeaderProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
       <div className="flex items-center space-x-3">

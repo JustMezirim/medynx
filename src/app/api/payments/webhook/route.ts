@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { verifyPayment } from "@/lib/paystack"
+// import { verifyPayment } from "@/lib/paystack"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import { createZoomMeeting } from "@/lib/zoom"
@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
         const appointmentDateTime = new Date(appointment.date)
         const [hours, minutes] = appointment.timeSlot.split(':')
         appointmentDateTime.setHours(parseInt(hours), parseInt(minutes))
-        const startTime = appointmentDateTime.toISOString()
+        // const startTime = appointmentDateTime.toISOString()
 
-        const zoomMeeting = await createZoomMeeting(meetingTopic, startTime, 60)
+        const zoomMeeting = await createZoomMeeting(meetingTopic, appointmentDateTime, appointment.timeSlot, 60)
 
         await Appointment.findByIdAndUpdate(appointment._id, {
           zoomMeetingId: zoomMeeting.id,

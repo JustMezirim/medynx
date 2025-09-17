@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB  from "@/lib/db"
 import  User from "@/lib/models/User"
 import  Appointment from "@/lib/models/Appointment"
+import Availability from "@/lib/models/Availability"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
 
-    const doctor = await User.findById(params.id).select("-password")
+    const { id } = await params
+    const doctor = await User.findById(id).select("-password")
     
     if (!doctor || doctor.role !== "doctor") {
       return NextResponse.json(
@@ -19,23 +21,23 @@ export async function GET(
       )
     }
 
-    // Get real appointment data for statistics
-    const appointments = await Appointment.find({ doctor: params.id })
-    const completedAppointments = appointments.filter(apt => apt.status === "completed")
-    const uniquePatients = [...new Set(appointments.map(apt => apt.patient.toString()))]
-
-    // Calculate next available slot
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    // Check if doctor has future available slots
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     
-    const nextAvailable = appointments.find(apt => 
-      apt.date > now && apt.status === "pending"
-    ) ? "Tomorrow 10:00 AM" : "Today 2:00 PM"
+    const hasAvailability = await Availability.findOne({
+      doctor: id,
+      date: { $gte: today },
+      'timeSlots.isBooked': false
+    })
+
+    // Get real appointment data for statistics
+    const appointments = await Appointment.find({ doctor: id })
+    const uniquePatients = [...new Set(appointments.map(apt => apt.patient.toString()))]
 
     // Get real reviews from completed appointments
     const reviewsData = await Appointment.find({
-      doctor: params.id,
+      doctor: id,
       status: "completed",
       rating: { $exists: true }
     }).populate("patient", "firstName lastName").limit(10)
@@ -52,16 +54,18 @@ export async function GET(
       ...doctor.toObject(),
       totalPatients: uniquePatients.length,
       totalReviews: reviews.length,
-      nextAvailable: doctor.workingHours ? nextAvailable : null,
+      hasAvailability: !!hasAvailability,
       languages: doctor.languages || ["English"],
-      education: doctor.education || `${doctor.specialization} Specialist`,
-      workingHours: doctor.workingHours || null
+      education: doctor.education || `${doctor.specialization} Specialist`
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       doctor: doctorWithStats,
       reviews
     })
+    
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return response
   } catch (error) {
     console.error("Error fetching doctor:", error)
     return NextResponse.json(

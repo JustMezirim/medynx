@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useCallback  } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,17 +37,12 @@ interface MedicalFile {
 export default function DoctorMedicalFilesPage() {
   const [files, setFiles] = useState<MedicalFile[]>([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
+  // const [uploading, setUploading] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [showUploadForm, setShowUploadForm] = useState(false)
-  const [selectedPatient, setSelectedPatient] = useState("")
 
-  useEffect(() => {
-    fetchMedicalFiles()
-  }, [categoryFilter])
-
-  const fetchMedicalFiles = async () => {
+  const fetchMedicalFiles = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         ...(categoryFilter !== "all" && { category: categoryFilter }),
@@ -61,9 +56,11 @@ export default function DoctorMedicalFilesPage() {
       console.error("Error fetching medical files:", error)
       showToast.error("Failed to load medical files")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
-  }
+  }, [categoryFilter])
+
+  // Replaced with React Query
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -114,7 +111,10 @@ export default function DoctorMedicalFilesPage() {
       <Sidebar userRole="doctor" userName="Dr. Sarah Johnson" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="Medical Files" subtitle="Manage patient medical documents and reports" />
+        <DashboardHeader 
+          // title="Medical Files" 
+          // subtitle="Manage patient medical documents and reports"
+        />
 
         <main className="flex-1 overflow-y-auto p-6">
           {/* Actions Bar */}

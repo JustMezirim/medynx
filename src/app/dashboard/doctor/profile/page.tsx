@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useState  } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { ProfileOverview } from "@/components/doctor/profile/profile-overview"
@@ -31,9 +31,7 @@ export default function DoctorProfilePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
+  // Replaced with React Query
 
   const fetchProfile = async () => {
     try {
@@ -62,7 +60,7 @@ export default function DoctorProfilePage() {
       console.error("Error fetching data:", error)
       showToast.error("Failed to load profile")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
   }
 
@@ -115,7 +113,7 @@ export default function DoctorProfilePage() {
       <Sidebar userRole="doctor" userName="Doctor" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="My Profile" subtitle="Manage your professional information and settings" />
+        <DashboardHeader  />
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-10xl mx-auto space-y-6">

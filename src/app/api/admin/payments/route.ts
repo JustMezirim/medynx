@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import { verifyToken } from "@/lib/auth"
+import { formatDateForStorage } from "@/lib/date-utils"
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const status = searchParams.get("status")
 
-    const query: any = {}
+    const query: Record<string, unknown> = {}
 
     if (status && status !== "all") {
       query.paymentStatus = status
@@ -40,10 +41,15 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       payments = payments.filter(
-        (payment: any) =>
-          payment.patient.firstName.toLowerCase().includes(search.toLowerCase()) ||
-          payment.patient.lastName.toLowerCase().includes(search.toLowerCase()) ||
-          payment.transactionId?.toLowerCase().includes(search.toLowerCase()),
+        (payment: { patient: { firstName: string; lastName: string }; transactionId?: string }) => {
+          const patient = payment.patient as { firstName: string; lastName: string }
+          const transactionId = payment.transactionId as string | undefined
+          return (
+            patient?.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+            patient?.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+            transactionId?.toLowerCase().includes(search.toLowerCase())
+          )
+        }
       )
     }
 
@@ -73,19 +79,19 @@ export async function GET(request: NextRequest) {
     const totalPages = Math.ceil(total / limit)
 
     return NextResponse.json({
-      payments: payments.map((payment: any) => ({
+      payments: payments.map((payment: Record<string, unknown>) => ({
         _id: payment._id,
         appointment: {
           _id: payment._id,
           patient: payment.patient,
           doctor: payment.doctor,
-          date: payment.date,
-          time: payment.time,
+          date: formatDateForStorage(payment.date as string | Date),
+          time: payment.timeSlot,
         },
         amount: payment.amount,
         status: payment.paymentStatus,
         paymentMethod: payment.paymentMethod || "card",
-        transactionId: payment.transactionId || `TXN${payment._id.toString().slice(-8)}`,
+        transactionId: payment.transactionId || `TXN${String(payment._id).slice(-8)}`,
         createdAt: payment.createdAt,
         refundedAt: payment.refundedAt,
         refundAmount: payment.refundAmount,

@@ -18,9 +18,7 @@ interface Doctor {
   totalPatients?: number
   totalReviews?: number
   nextAvailable?: string
-  workingHours?: {
-    [key: string]: { start: string; end: string }
-  }
+  hasAvailability?: boolean
 }
 
 interface DoctorProfileProps {
@@ -111,7 +109,7 @@ export function DoctorProfile({ doctor, onBookAppointment }: DoctorProfileProps)
             )}
 
             <div className="flex space-x-3">
-              {doctor.workingHours && Object.values(doctor.workingHours).some(hours => hours.start !== "Closed") ? (
+              {doctor.hasAvailability ? (
                 <Button 
                   onClick={onBookAppointment}
                   className="bg-blue-600 hover:bg-blue-700"

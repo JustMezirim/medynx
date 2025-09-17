@@ -16,16 +16,27 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
     const user = await User.findById(payload.userId).select("-password")
+    if (!user || !user.isActive) {
+      return NextResponse.json({ message: "Account deactivated", logout: true }, { status: 403 })
+    }
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ profile: user })
+    // Add default values for patient fields if they don't exist
+    const profile = {
+      ...user.toObject(),
+      dateOfBirth: user.dateOfBirth || null,
+      gender: user.gender || '',
+      address: user.address || ''
+    }
+
+    return NextResponse.json({ profile })
   } catch (error) {
     console.error("Error fetching profile:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
@@ -52,7 +63,7 @@ async function updateProfile(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
 
@@ -60,6 +71,9 @@ async function updateProfile(request: NextRequest) {
     const { firstName, lastName, phone, dateOfBirth, gender, address, specialization, bio, consultationFee, currentPassword, newPassword } = body
 
     const user = await User.findById(payload.userId)
+    if (!user || !user.isActive) {
+      return NextResponse.json({ message: "Account deactivated", logout: true }, { status: 403 })
+    }
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
     }

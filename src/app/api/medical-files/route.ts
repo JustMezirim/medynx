@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     const { searchParams } = new URL(request.url)
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")
 
     // Build query based on user role
-    const query: any = {}
+    const query: Record<string, unknown> = {}
 
     if (payload.role === "patient") {
       query.patient = payload.userId
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     const { patientId, fileName, fileUrl, fileType, fileSize, category, description, appointmentId } =

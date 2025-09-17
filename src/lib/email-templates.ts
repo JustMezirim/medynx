@@ -479,5 +479,54 @@ export const emailTemplates = {
         </div>
       </div>
     `
+  }),
+
+  appointmentReminderCustom: (recipientName: string, otherPartyName: string, appointmentDate: string, appointmentTime: string, meetingLink: string, reminderTime: string) => ({
+    subject: `Appointment Reminder - ${reminderTime} to go`,
+    html: `
+      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="background: #f59e0b; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Appointment Reminder</h1>
+        </div>
+        <div style="padding: 30px; background: white;">
+          <p style="font-size: 16px; color: #333;">Dear ${recipientName},</p>
+          <p style="font-size: 16px; color: #333;">This is a friendly reminder that you have an upcoming video consultation in <strong>${reminderTime}</strong>:</p>
+          
+          <div style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+              <div style="background: #f59e0b; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M15 10L11 14L9 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="white" stroke-width="2"/>
+                </svg>
+              </div>
+              <div>
+                <p style="margin: 0; font-weight: bold; color: #92400e;">Appointment Details</p>
+              </div>
+            </div>
+            <div style="border-top: 1px dashed #f59e0b; padding-top: 15px;">
+              <p style="margin: 8px 0;"><strong style="color: #334155;">With:</strong> ${otherPartyName}</p>
+              <p style="margin: 8px 0;"><strong style="color: #334155;">Date:</strong> ${appointmentDate}</p>
+              <p style="margin: 8px 0;"><strong style="color: #334155;">Time:</strong> ${appointmentTime}</p>
+              <p style="margin: 8px 0;"><strong style="color: #334155;">Meeting Link:</strong> <a href="${meetingLink}" style="color: #2563eb; word-break: break-all;">Join Meeting</a></p>
+            </div>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${meetingLink}" style="background: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">🎥 Join Video Call</a>
+          </div>
+          
+          <div style="background: #f0f9ff; border-left: 4px solid #2563eb; padding: 12px; margin: 20px 0;">
+            <p style="margin: 0; color: #2563eb; font-size: 14px;">💡 <strong>Tip:</strong> Please test your audio and video before the meeting starts. Make sure you're in a quiet environment.</p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333;">We look forward to your consultation!</p>
+          <p style="font-size: 16px; color: #333;">Best regards,<br><strong>Medynx Team</strong></p>
+        </div>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 14px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Medynx. All rights reserved.</p>
+        </div>
+      </div>
+    `
   })
 }

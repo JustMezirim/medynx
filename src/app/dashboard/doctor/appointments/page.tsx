@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback  } from "react"
 import { showToast } from "@/components/ui/toast-helper"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
@@ -12,7 +12,7 @@ import { AppointmentTable } from "@/components/doctor/appointments/appointment-t
 import { AppointmentModal } from "@/components/doctor/appointments/appointment-modal"
 import { EmptyState } from "@/components/doctor/appointments/empty-state"
 import { Pagination } from "@/components/doctor/appointments/pagination"
-import { Check, X, ExternalLink, Activity, Clock, FileText } from "lucide-react"
+import { Check, X, Activity, Clock, FileText } from "lucide-react"
 
 interface Appointment {
   _id: string
@@ -68,13 +68,8 @@ export default function DoctorAppointmentsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [viewMode, setViewMode] = useState<"list" | "grid" | "table">("list")
 
-  useEffect(() => {
-    fetchAppointments()
-    fetchStats()
-  }, [statusFilter, typeFilter, searchQuery, dateRange, currentPage])
-
-  const fetchAppointments = async () => {
-    setLoading(true)
+  const fetchAppointments = useCallback(async () => {
+    // Loading handled by React Query
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -92,11 +87,11 @@ export default function DoctorAppointmentsPage() {
       console.error("Error fetching appointments:", error)
       showToast.error("Failed to load appointments")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
-  }
+  }, [currentPage, statusFilter, typeFilter, searchQuery, dateRange])
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const params = new URLSearchParams()
       if (dateRange !== "all") {
@@ -108,7 +103,12 @@ export default function DoctorAppointmentsPage() {
     } catch (error) {
       console.error("Error fetching stats:", error)
     }
-  }
+  }, [dateRange])
+
+  useEffect(() => {
+    fetchAppointments()
+    fetchStats()
+  }, [statusFilter, typeFilter, searchQuery, dateRange, currentPage, fetchAppointments, fetchStats])
 
   const handleUpdateAppointment = async (appointmentId: string, updates: unknown) => {
     try {
@@ -216,7 +216,10 @@ export default function DoctorAppointmentsPage() {
       <div className="flex h-screen bg-gray-50">
         <Sidebar userRole="doctor" userName="Doctor" />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <DashboardHeader title="Appointments" subtitle="Manage your patient appointments" />
+          <DashboardHeader 
+            // title="Appointments" 
+            // subtitle="Manage your patient appointments" 
+          />
           <main className="flex-1 overflow-y-auto p-6">
             {/* <LoadingSkeleton /> */}
           </main>
@@ -230,8 +233,8 @@ export default function DoctorAppointmentsPage() {
       <Sidebar userRole="doctor" userName="Doctor" />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title="Manage Appointments"
-          subtitle="View and manage your patient appointments and consultations"
+          // title="Manage Appointments"
+          // subtitle="View and manage your patient appointments and consultations"
         />
         
         <main className="flex-1 overflow-y-auto p-6 space-y-8">

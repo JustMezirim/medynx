@@ -1,44 +1,43 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Activity, Stethoscope, Calendar, FileText, User } from "lucide-react"
 import Link from "next/link"
 
 export function QuickActions() {
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-slate-50 to-gray-50 border-b">
-        <CardTitle className="flex items-center space-x-2">
-          <Activity className="h-5 w-5 text-green-600" />
-          <span>Quick Actions</span>
+    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center">
+          <Activity className="h-5 w-5 mr-2" />
+          Quick Actions
         </CardTitle>
-        <CardDescription>Common tasks and shortcuts</CardDescription>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent>
         <div className="space-y-3">
           <Link href="/dashboard/patient/doctors">
-            <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 h-12">
-              <Stethoscope className="h-5 w-5 mr-3" />
+            <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
+              <Stethoscope className="h-4 w-4 mr-2" />
               Find Doctor
             </Button>
           </Link>
 
           <Link href="/dashboard/patient/appointments">
-            <Button variant="outline" className="w-full justify-start hover:bg-gray-50 h-12">
-              <Calendar className="h-5 w-5 mr-3" />
+            <Button variant="outline" className="w-full justify-start border-slate-200">
+              <Calendar className="h-4 w-4 mr-2" />
               My Appointments
             </Button>
           </Link>
 
           <Link href="/dashboard/patient/medical-files">
-            <Button variant="outline" className="w-full justify-start hover:bg-gray-50 h-12">
-              <FileText className="h-5 w-5 mr-3" />
+            <Button variant="outline" className="w-full justify-start border-slate-200">
+              <FileText className="h-4 w-4 mr-2" />
               Medical Files
             </Button>
           </Link>
 
           <Link href="/dashboard/patient/profile">
-            <Button variant="outline" className="w-full justify-start hover:bg-gray-50 h-12">
-              <User className="h-5 w-5 mr-3" />
+            <Button variant="outline" className="w-full justify-start border-slate-200">
+              <User className="h-4 w-4 mr-2" />
               Update Profile
             </Button>
           </Link>

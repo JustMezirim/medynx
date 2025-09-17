@@ -47,7 +47,7 @@ const UserSchema = new Schema<IUser>(
     experience: { type: Number },
     bio: { type: String },
     rating: { type: Number, default: 0 },
-    consultationFee: { type: Number, default: 10000 },
+    consultationFee: { type: Number },
     isVerified: { type: Boolean, default: false },
   },
   {

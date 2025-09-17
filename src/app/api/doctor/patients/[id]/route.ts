@@ -6,7 +6,7 @@ import { verifyToken } from "@/lib/auth"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
@@ -19,7 +19,7 @@ export async function GET(
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    const patientId = params.id
+    const { id: patientId } = await params
 
     // Verify this patient has appointments with this doctor
     const hasAppointment = await Appointment.findOne({

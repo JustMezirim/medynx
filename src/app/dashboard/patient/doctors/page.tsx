@@ -2,13 +2,14 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useState, useCallback  } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DoctorSearchFilters, DoctorCard } from "@/components/patient"
 import { Search } from "lucide-react"
+import { usePatientDoctors } from '@/hooks/query'
 
 interface Doctor {
   _id: string
@@ -31,7 +32,7 @@ interface Doctor {
 
 export default function FindDoctorsPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([])
-  const [loading, setLoading] = useState(true)
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSpecialization, setSelectedSpecialization] = useState("all")
   const [sortBy, setSortBy] = useState("rating")
@@ -42,12 +43,37 @@ export default function FindDoctorsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [favorites, setFavorites] = useState<string[]>([])
 
+  const fetchDoctors = useCallback(async () => {
+    // Loading handled by React Query
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '12',
+        ...(selectedSpecialization !== "all" && { specialization: selectedSpecialization }),
+        ...(searchTerm && { search: searchTerm }),
+        ...(sortBy && { sortBy }),
+        ...(priceRange !== "all" && { priceRange }),
+        ...(availabilityFilter !== "all" && { availability: availabilityFilter }),
+      })
 
+      const response = await fetch(`/api/doctors?${params}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
+      const data = await response.json()
 
-  useEffect(() => {
-    fetchDoctors()
-    loadFavorites()
-  }, [searchTerm, selectedSpecialization, sortBy, priceRange, availabilityFilter, currentPage])
+      setDoctors(data.doctors || [])
+      setTotalPages(data.pagination?.pages || 1)
+    } catch (error) {
+      console.error("Error fetching doctors:", error)
+    } finally {
+      // Loading handled by React Query
+    }
+  }, [currentPage, selectedSpecialization, searchTerm, sortBy, priceRange, availabilityFilter])
+
+  // Replaced with React Query
 
   const loadFavorites = () => {
     const saved = localStorage.getItem('favoriteDoctors')
@@ -65,31 +91,6 @@ export default function FindDoctorsPage() {
     localStorage.setItem('favoriteDoctors', JSON.stringify(newFavorites))
   }
 
-  const fetchDoctors = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '12',
-        ...(selectedSpecialization !== "all" && { specialization: selectedSpecialization }),
-        ...(searchTerm && { search: searchTerm }),
-        ...(sortBy && { sortBy }),
-        ...(priceRange !== "all" && { priceRange }),
-        ...(availabilityFilter !== "all" && { availability: availabilityFilter }),
-      })
-
-      const response = await fetch(`/api/doctors?${params}`)
-      const data = await response.json()
-
-      setDoctors(data.doctors || [])
-      setTotalPages(data.pagination?.pages || 1)
-    } catch (error) {
-      console.error("Error fetching doctors:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setCurrentPage(1)
@@ -102,8 +103,8 @@ export default function FindDoctorsPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader
-          title="Find Doctors"
-          subtitle="Browse and book appointments with qualified healthcare professionals"
+          // title="Find Doctors"
+          // subtitle="Browse and book appointments with qualified healthcare professionals"
         />
 
         <main className="flex-1 overflow-y-auto p-6">
@@ -123,7 +124,7 @@ export default function FindDoctorsPage() {
             onSubmit={handleSearch}
           />
 
-          {!loading && doctors.length > 0 && (
+          {!isLoading && doctors.length > 0 && (
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">
                 Found {doctors.length} doctors

@@ -27,7 +27,7 @@ export function TodaysSchedule({ appointments, getStatusColor }: TodaysScheduleP
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Today"s Schedule</CardTitle>
+            <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">Today&apos;s Schedule</CardTitle>
             <CardDescription>Your appointments for today</CardDescription>
           </div>
           <Link href="/dashboard/doctor/appointments">

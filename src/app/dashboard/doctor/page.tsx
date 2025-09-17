@@ -9,6 +9,7 @@ import { QuickActions } from "@/components/doctor/dashboard/quick-actions"
 import { Notifications } from "@/components/doctor/dashboard/notifications"
 import { LoadingSpinner } from "@/components/doctor"
 
+
 interface DashboardStats {
   todayAppointments: number
   totalPatients: number
@@ -48,14 +49,14 @@ export default function DoctorDashboard() {
       const appointmentsData = await appointmentsRes.json()
 
       const today = new Date().toISOString().split("T")[0]
-      const todayAppts = appointmentsData.appointments?.filter((apt: any) => apt.date.split("T")[0] === today) || []
+      const todayAppts = appointmentsData.appointments?.filter((apt: { date: string }) => apt.date.split("T")[0] === today) || []
 
       // Calculate monthly earnings from completed appointments
-      const completedAppts = appointmentsData.appointments?.filter((apt: any) => apt.status === "completed") || []
-      const monthlyEarnings = completedAppts.reduce((sum: number, apt: any) => sum + (apt.amount || 0), 0)
+      const completedAppts = appointmentsData.appointments?.filter((apt: { status: string }) => apt.status === "completed") || []
+      const monthlyEarnings = completedAppts.reduce((sum: number, apt: { amount?: number }) => sum + (apt.amount || 0), 0)
       
       // Get unique patients count
-      const uniquePatients = new Set(appointmentsData.appointments?.map((apt: any) => apt.patient?._id) || []).size
+      const uniquePatients = new Set(appointmentsData.appointments?.map((apt: { patient?: { _id: string } }) => apt.patient?._id) || []).size
 
       setStats({
         todayAppointments: todayAppts.length,
@@ -96,10 +97,8 @@ export default function DoctorDashboard() {
       <Sidebar userRole="doctor" userName="Doctor" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader 
-          title="Doctor Dashboard" 
-          subtitle="Welcome back! Here's your practice overview and today's schedule." 
-        />
+
+        <DashboardHeader />
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-10xl mx-auto space-y-8">

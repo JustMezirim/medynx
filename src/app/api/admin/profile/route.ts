@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         // Verify JWT token and get user ID
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
         user = await User.findById(decoded.userId)
-      } catch (jwtError) {
+      } catch {
         // Fallback to finding admin user
         user = await User.findOne({ role: 'admin' })
       }
@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
         // Verify JWT token and get user ID
         const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
         user = await User.findById(decoded.userId)
-      } catch (jwtError) {
+      } catch {
         console.log('JWT verification failed, falling back to admin lookup')
         // Fallback to finding admin user
         user = await User.findOne({ role: 'admin' })

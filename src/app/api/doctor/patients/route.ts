@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
-import User from "@/lib/models/User"
+// import User from "@/lib/models/User"
 import { verifyToken } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     

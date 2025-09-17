@@ -2,12 +2,23 @@ import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
 import { verifyPassword, generateToken } from "@/lib/auth"
+import { checkMaintenanceMode } from "@/lib/maintenance"
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB()
 
+    // Parse request body once
     const { email, password } = await request.json()
+
+    // Check maintenance mode (allow admin login)
+    const isMaintenanceMode = await checkMaintenanceMode()
+    if (isMaintenanceMode) {
+      const user = await User.findOne({ email })
+      if (!user || user.role !== "admin") {
+        return NextResponse.json({ message: "System is under maintenance." }, { status: 503 })
+      }
+    }
 
     // Find user by email
     const user = await User.findOne({ email })
@@ -21,20 +32,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Invalid credentials" }, { status: 401 })
     }
 
-    // Check doctor account status
-    if (user.role === "doctor") {
-      if (user.isVerified === false) {
-        return NextResponse.json({ 
-          // message: "Your account is pending approval. Please wait for admin verification.",
-          pending: true 
-        }, { status: 403 })
-      }
-      if (user.isActive === false) {
-        return NextResponse.json({ 
-          message: "Your account has been deactivated. Please contact support for assistance.",
-          deactivated: true 
-        }, { status: 403 })
-      }
+    // Check account status
+    if (!user.isActive) {
+      return NextResponse.json({ 
+        message: "Account is deactivated. Please contact support.",
+        deactivated: true 
+      }, { status: 403 })
+    }
+
+    // Check doctor verification status
+    if (user.role === "doctor" && user.isVerified === false) {
+      return NextResponse.json({ 
+        message: "Your account is pending approval. Please wait for admin verification.",
+        pending: true 
+      }, { status: 403 })
     }
 
     // Generate JWT token
@@ -59,9 +70,10 @@ export async function POST(request: NextRequest) {
     })
 
     // Set HTTP-only cookie using Set-Cookie header
+    const isProduction = process.env.NODE_ENV === 'production'
     response.headers.set(
       "Set-Cookie",
-      `token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`
+      `token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${isProduction ? '; Secure' : ''}`
     )
 
     return response

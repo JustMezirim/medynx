@@ -3,7 +3,7 @@ import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import User from "@/lib/models/User"
 import { verifyToken } from "@/lib/auth"
-import { triggerNotificationWebhook, NotificationEvents } from "@/lib/notifications"
+import { webhooks } from "@/lib/webhooks"
 
 export async function GET(request: NextRequest) {
   try {
@@ -77,10 +77,8 @@ export async function POST(request: NextRequest) {
 
     await appointment.save()
 
-    // Trigger notification webhook
-    await triggerNotificationWebhook(NotificationEvents.APPOINTMENT_CREATED, {
-      appointmentId: appointment._id.toString()
-    })
+    // Trigger notifications
+    await webhooks.appointmentCreated(appointment._id.toString())
 
     return NextResponse.json(
       {
@@ -91,7 +89,7 @@ export async function POST(request: NextRequest) {
     )
   } catch (error: unknown) {
     console.error("Error creating appointment:", error)
-    if ((error as any).name === 'ValidationError') {
+    if ((error as { name?: string }).name === 'ValidationError') {
       return NextResponse.json({ message: 'Invalid appointment data' }, { status: 400 })
     }
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })

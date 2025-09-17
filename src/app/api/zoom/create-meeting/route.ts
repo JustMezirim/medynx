@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const appointmentDate = new Date(appointment.date)
     const appointmentDateTime = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate(), 10, 0, 0)
 
-    const zoomMeeting = await createZoomMeeting(meetingTopic, appointmentDateTime.toISOString(), 60)
+    const zoomMeeting = await createZoomMeeting(meetingTopic, appointmentDateTime, appointment.timeSlot, 60)
 
     // Update appointment with Zoom details
     appointment.meetingLink = zoomMeeting.join_url

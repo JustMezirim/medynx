@@ -1,14 +1,13 @@
 # Medynx - Doctor Appointment System
 
-A modern, full-stack web application for booking and managing doctor appointments with video consultation capabilities and advanced animations.
+A modern, full-stack web application for booking and managing video consultations with doctors, featuring integrated Zoom meetings and advanced animations.
 
 ## 🚀 Features
 
 ### Core Functionality
 - **User Authentication**: Secure login/register system with JWT tokens and animated UI
 - **Role-Based Access**: Three user roles (Patient, Doctor, Admin) with specific permissions
-- **Appointment Booking**: Real-time appointment scheduling with availability management
-- **Video Consultations**: Integrated Zoom meetings for remote consultations
+- **Video Consultations**: Real-time video appointment scheduling with integrated Zoom meetings
 - **Payment Processing**: Paystack integration for secure payment handling
 - **Medical Records**: Digital storage and management of patient medical files
 - **Dashboard Analytics**: Comprehensive dashboards for all user types
@@ -18,14 +17,14 @@ A modern, full-stack web application for booking and managing doctor appointment
 
 #### Patients
 - Browse and search verified doctors with animated cards
-- Book appointments with real-time availability and interactive timeline
-- Join video consultations through integrated Zoom
+- Book video consultations with real-time availability and interactive timeline
+- Join video meetings through integrated Zoom
 - View appointment history and medical records
 - Make secure payments via Paystack integration
 
 #### Doctors
 - Manage appointment schedules and availability
-- Conduct video consultations with patients
+- Conduct video consultations with patients via Zoom
 - Access patient medical records securely
 - Update consultation notes and prescriptions
 - View earnings and appointment statistics
@@ -231,7 +230,7 @@ interface IUser {
   
   // Patient-specific fields
   dateOfBirth?: Date
-  gender?: "Male" | "Female" | "Other"
+  gender?: "Male" | "Female"
   address?: string
   
   // Doctor-specific fields
@@ -258,7 +257,7 @@ interface IAppointment {
   date: Date
   timeSlot: string
   status: "pending" | "confirmed" | "completed" | "cancelled"
-  type: "video" | "in-person"
+  type: "video"
   symptoms?: string
   diagnosis?: string
   prescription?: string
@@ -583,7 +582,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <!-- ## 📞 Support
 
 For support and questions:
-- **Email**: support@Medynx.com
+- **Email**: medynxcare@gmail.com
 - **Phone**: +1 (555) 123-4567
 - **Documentation**: [docs.Medynx.com](https://docs.Medynx.com)
 - **GitHub Issues**: [Report bugs and feature requests](https://github.com/Medynx/issues)

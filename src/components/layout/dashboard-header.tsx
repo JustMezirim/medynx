@@ -1,14 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Bell, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { Badge } from "@/components/ui/badge"
 import { NotificationBell } from "@/components/ui/notification-bell"
 
 interface DashboardHeaderProps {
-  title?: string
-  subtitle?: string
   actions?: React.ReactNode
 }
 
@@ -18,33 +15,11 @@ interface UserInfo {
   role: string
 }
 
-export function DashboardHeader({ title, subtitle, actions }: DashboardHeaderProps) {
+export function DashboardHeader({ actions }: DashboardHeaderProps) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        console.log("Fetching user data...")
-        const response = await fetch("/api/auth/me")
-        console.log("Response status:", response.status)
-        if (response.ok) {
-          const data = await response.json()
-          console.log("User data:", data)
-          setUser(data.user)
-          setLoading(false)
-        } else {
-          const errorText = await response.text()
-          console.error("Failed to fetch user:", response.status, errorText)
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error("Failed to fetch user:", error)
-        setLoading(false)
-      }
-    }
-    fetchUser()
-  }, [])
+  // Fetch replaced with React Query
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -59,22 +34,8 @@ export function DashboardHeader({ title, subtitle, actions }: DashboardHeaderPro
     <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Left Section - Title & Subtitle */}
+          {/* Left Section - Empty */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center space-x-4">
-              {title && (
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
-                    {title}
-                  </h1>
-                  {subtitle && (
-                    <p className="text-sm text-slate-600 mt-0.5 truncate">
-                      {subtitle}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Right Section - Actions & User */}

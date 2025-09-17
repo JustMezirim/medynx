@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const status = searchParams.get("status")
 
-    const query: any = { role: "doctor" }
+    const query: Record<string, unknown> = { role: "doctor" }
 
     if (search) {
       query.$or = [

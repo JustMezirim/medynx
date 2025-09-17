@@ -1,13 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {, useState, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
-import { Calendar, Clock, Video, User, CheckCircle } from "lucide-react"
+import { Calendar, Video, User, CheckCircle } from "lucide-react"
+import { usePatientAppointment } from '@/hooks/query'
 import { showToast } from "@/components/ui/toast-helper"
 
 interface Appointment {
@@ -33,17 +34,7 @@ export default function AppointmentDetailsPage() {
   const [appointment, setAppointment] = useState<Appointment | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchAppointment()
-    }
-    
-    if (searchParams.get("success") === "payment_completed") {
-      showToast.success("Payment completed successfully! Your appointment is confirmed.")
-    }
-  }, [params.id, searchParams])
-
-  const fetchAppointment = async () => {
+  const fetchAppointment = useCallback(async () => {
     try {
       const response = await fetch(`/api/appointment/${params.id}`)
       if (response.ok) {
@@ -58,7 +49,15 @@ export default function AppointmentDetailsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id])(() => {
+    if (params.id) {
+      fetchAppointment()
+    }
+    
+    if (searchParams.get("success") === "payment_completed") {
+      showToast.success("Payment completed successfully! Your appointment is confirmed.")
+    }
+  }, [params.id, searchParams, fetchAppointment])
 
   if (loading) {
     return (
@@ -87,7 +86,7 @@ export default function AppointmentDetailsPage() {
       <Sidebar userRole="patient" userName="Patient" />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="Appointment Details" subtitle="Your confirmed appointment" />
+        <DashboardHeader />
         
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-2xl mx-auto">
@@ -123,14 +122,10 @@ export default function AppointmentDetailsPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {appointment.type === "video" ? (
-                    <Video className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <User className="h-5 w-5 text-blue-600" />
-                  )}
+                  <Video className="h-5 w-5 text-blue-600" />
                   <div>
                     <p className="font-medium">Consultation Type</p>
-                    <p className="text-gray-600">{appointment.type === "video" ? "Video Call" : "In-person Visit"}</p>
+                    <p className="text-gray-600">Video Consultation</p>
                   </div>
                 </div>
 

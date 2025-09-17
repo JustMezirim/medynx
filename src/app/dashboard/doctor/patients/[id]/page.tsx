@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
@@ -40,13 +40,7 @@ export default function PatientDetailPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (patientId) {
-      fetchPatientDetails()
-    }
-  }, [patientId])
-
-  const fetchPatientDetails = async () => {
+  const fetchPatientDetails = useCallback(async () => {
     try {
       const [patientRes, appointmentsRes] = await Promise.all([
         fetch(`/api/doctor/patients/${patientId}`),
@@ -68,7 +62,11 @@ export default function PatientDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [patientId])(() => {
+    if (patientId) {
+      fetchPatientDetails()
+    }
+  }, [patientId, fetchPatientDetails])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,8 +92,8 @@ export default function PatientDetailPage() {
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title={`${patient.firstName} ${patient.lastName}`}
-          subtitle="Patient Details"
+          // title={`${patient.firstName} ${patient.lastName}`}
+          // subtitle="Patient Details"
         />
 
         <main className="flex-1 overflow-y-auto p-6">

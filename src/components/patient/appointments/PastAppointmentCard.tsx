@@ -100,7 +100,7 @@ export function PastAppointmentCard({
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                     <p className="text-gray-600">No report available</p>
-                    <p className="text-sm text-gray-500">The doctor hasn't provided a detailed report yet</p>
+                    <p className="text-sm text-gray-500">The doctor hasn&apos;t provided a detailed report yet</p>
                   </div>
                 ) : (
                   <>

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Star, Languages, Video, MapPin } from "lucide-react"
+import { Star, Languages, Video } from "lucide-react"
 
 interface Doctor {
   firstName: string
@@ -62,20 +62,11 @@ export function DoctorTabs({ doctor, reviews }: DoctorTabsProps) {
             <CardTitle>Services & Specializations</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                <Video className="h-6 w-6 text-green-600" />
-                <div>
-                  <p className="font-medium">Video Consultations</p>
-                  <p className="text-sm text-gray-600">Secure online consultations</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                <MapPin className="h-6 w-6 text-blue-600" />
-                <div>
-                  <p className="font-medium">In-Person Visits</p>
-                  <p className="text-sm text-gray-600">Clinic consultations</p>
-                </div>
+            <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+              <Video className="h-6 w-6 text-blue-600" />
+              <div>
+                <p className="font-medium">Video Consultations</p>
+                <p className="text-sm text-gray-600">Secure online consultations with Zoom integration</p>
               </div>
             </div>
           </CardContent>

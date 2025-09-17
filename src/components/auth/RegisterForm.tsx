@@ -111,7 +111,7 @@ const RegisterForm = () => {
       } else {
         showToast.error("Registration failed", result.message || "Something went wrong")
       }
-    } catch (error) {
+    } catch {
       showToast.error("Error", "Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
@@ -347,7 +347,6 @@ const RegisterForm = () => {
                                 <SelectContent>
                                   <SelectItem value="Male">Male</SelectItem>
                                   <SelectItem value="Female">Female</SelectItem>
-                                  <SelectItem value="Other">Other</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>

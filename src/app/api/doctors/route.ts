@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
+import Availability from "@/lib/models/Availability"
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
 
     // Build query
-    const query: any = {
+    const query: Record<string, unknown> = {
       role: "doctor",
       isActive: true,
       isVerified: true,
@@ -38,10 +39,29 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .sort({ rating: -1, createdAt: -1 })
 
+    // Check availability for each doctor
+    const doctorsWithAvailability = await Promise.all(
+      doctors.map(async (doctor) => {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        const hasAvailability = await Availability.findOne({
+          doctor: doctor._id,
+          date: { $gte: today },
+          'timeSlots.isBooked': false
+        })
+        
+        return {
+          ...doctor.toObject(),
+          hasAvailability: !!hasAvailability
+        }
+      })
+    )
+
     const total = await User.countDocuments(query)
 
-    return NextResponse.json({
-      doctors,
+    const response = NextResponse.json({
+      doctors: doctorsWithAvailability,
       pagination: {
         page,
         limit,
@@ -49,6 +69,9 @@ export async function GET(request: NextRequest) {
         pages: Math.ceil(total / limit),
       },
     })
+    
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    return response
   } catch (error) {
     console.error("Error fetching doctors:", error)
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })

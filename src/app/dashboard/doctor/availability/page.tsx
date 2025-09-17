@@ -10,8 +10,8 @@ export default function DoctorAvailabilityPage() {
       <Sidebar userRole="doctor" userName="Dr. Smith" />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title="Manage Availability" 
-          subtitle="Set your available time slots for appointments"
+          // title="Manage Availability" 
+          // subtitle="Set your available time slots for appointments"
         />
         
         <main className="flex-1 overflow-y-auto">

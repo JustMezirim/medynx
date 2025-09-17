@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Shield, Server, Database, Wrench, CheckCircle, Clock, AlertTriangle } from "lucide-react"
 
 interface SystemStatusProps {
-  systemStatus: {
+  systemStatus?: {
     server: string
     database: string
     maintenance: string
@@ -11,6 +11,15 @@ interface SystemStatusProps {
 }
 
 export function SystemStatus({ systemStatus }: SystemStatusProps) {
+  if (!systemStatus) {
+    return (
+      <Card className="border-0 shadow-lg bg-white/90 backdrop-blur-sm dark:bg-slate-800/90">
+        <CardContent className="p-6">
+          <div className="h-32 bg-slate-300 animate-pulse rounded"></div>
+        </CardContent>
+      </Card>
+    )
+  }
   const getSystemStatusIcon = (status: string) => {
     switch (status) {
       case "online":
@@ -36,28 +45,28 @@ export function SystemStatus({ systemStatus }: SystemStatusProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className={`flex justify-between items-center p-4 rounded-xl border ${
-          systemStatus.server === 'online' 
+          systemStatus?.server === 'online' 
             ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-800'
             : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800'
         }`}>
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
-              systemStatus.server === 'online' ? 'bg-emerald-500' : 'bg-red-500'
+              systemStatus?.server === 'online' ? 'bg-emerald-500' : 'bg-red-500'
             }`}>
               <Server className="h-4 w-4 text-white" />
             </div>
             <span className={`font-medium ${
-              systemStatus.server === 'online' 
+              systemStatus?.server === 'online' 
                 ? 'text-emerald-800 dark:text-emerald-300'
                 : 'text-red-800 dark:text-red-300'
             }`}>Server Status</span>
           </div>
-          <Badge className={systemStatus.server === 'online'
+          <Badge className={systemStatus?.server === 'online'
             ? 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900 dark:text-emerald-300 dark:border-emerald-800'
             : 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:text-red-300 dark:border-red-800'
           }>
-            {getSystemStatusIcon(systemStatus.server)}
-            <span className="ml-1 capitalize">{systemStatus.server}</span>
+            {getSystemStatusIcon(systemStatus?.server || '')}
+            <span className="ml-1 capitalize">{systemStatus?.server || 'unknown'}</span>
           </Badge>
         </div>
         

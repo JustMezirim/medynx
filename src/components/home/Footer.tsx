@@ -8,8 +8,9 @@ const Footer = () => {
           <div>
             
             <div className="flex items-center space-x-3 -mt-20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src="/logo/Medynx.png" 
+                src="/logo/medynx.png" 
                 alt="Medynx Logo"
                 className="w-60 h-auto"
               />
@@ -40,21 +41,21 @@ const Footer = () => {
                   Emergency Care
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a href="#" className="hover:text-white transition-colors">
                   Lab Tests
                 </a>
-              </li>
+              </li> */}
               <li>
                 <a href="#" className="hover:text-white transition-colors">
                   Mental Health
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a href="#" className="hover:text-white transition-colors">
                   Prescription Delivery
                 </a>
-              </li>
+              </li> */}
             </ul>
           </div>
 

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 })
+    }
+
+    if (!user.isActive) {
+      return NextResponse.json({ message: "Account deactivated", logout: true }, { status: 403 })
     }
 
     return NextResponse.json({

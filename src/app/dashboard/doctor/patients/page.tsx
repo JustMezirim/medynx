@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState  } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { PatientsHeader } from "@/components/doctor/patients/patients-header"
@@ -31,9 +31,7 @@ export default function DoctorPatientsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
 
-  useEffect(() => {
-    fetchPatients()
-  }, [])
+  // Replaced with React Query
 
   const fetchPatients = async () => {
     try {
@@ -49,7 +47,7 @@ export default function DoctorPatientsPage() {
       console.error("Error fetching patients:", error)
       showToast.error("Failed to load patients")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
   }
 
@@ -99,8 +97,8 @@ export default function DoctorPatientsPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title="My Patients" 
-          subtitle="Manage your patient records and medical history"
+          // title="My Patients" 
+          // subtitle="Manage your patient records and medical history"
           actions={
             <>
               <Button 
@@ -126,7 +124,6 @@ export default function DoctorPatientsPage() {
           <div className="max-w-10xl mx-auto space-y-6">
             <PatientsHeader 
               patientCount={filteredPatients.length}
-              onExport={handleExportPatients}
             />
 
             <PatientsSearch 

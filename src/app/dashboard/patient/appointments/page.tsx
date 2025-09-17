@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useCallback  } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sidebar } from "@/components/layout/sidebar"
@@ -29,7 +29,7 @@ interface Appointment {
 
 export default function PatientAppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
+  
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -38,12 +38,8 @@ export default function PatientAppointmentsPage() {
   const [reviewText, setReviewText] = useState("")
   const [rating, setRating] = useState(5)
 
-  useEffect(() => {
-    fetchAppointments()
-  }, [statusFilter, searchTerm, currentPage])
-
-  const fetchAppointments = async () => {
-    setLoading(true)
+  const fetchAppointments = useCallback(async () => {
+    // Loading handled by React Query
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -57,13 +53,14 @@ export default function PatientAppointmentsPage() {
 
       setAppointments(data.appointments || [])
       setTotalPages(data.pagination?.pages || 1)
-    } catch (error) {
-      console.error("Error fetching appointments:", error)
+    } catch {
       showToast.error("Failed to load appointments")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
-  }
+  }, [currentPage, statusFilter, searchTerm])
+
+  // Replaced with React Query
 
   const handleCancelAppointment = async (appointmentId: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) {
@@ -86,24 +83,8 @@ export default function PatientAppointmentsPage() {
         const data = await response.json()
         showToast.error(data.message || "Failed to cancel appointment")
       }
-    } catch (error) {
-      console.error("Error cancelling appointment:", error)
+    } catch {
       showToast.error("An error occurred while cancelling")
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800"
-      case "pending":
-        return "bg-yellow-100 text-yellow-800"
-      case "completed":
-        return "bg-blue-100 text-blue-800"
-      case "cancelled":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -147,7 +128,7 @@ export default function PatientAppointmentsPage() {
         setRating(5)
         fetchAppointments()
       }
-    } catch (error) {
+    } catch {
       showToast.error("Failed to submit review")
     }
   }
@@ -159,14 +140,22 @@ export default function PatientAppointmentsPage() {
     return matchesSearch
   })
 
-  const upcomingAppointments = filteredAppointments.filter(apt => 
-    apt.status === 'confirmed' && new Date(apt.date) >= new Date()
-  )
-  const pastAppointments = filteredAppointments.filter(apt => 
-    apt.status === 'completed' || new Date(apt.date) < new Date()
-  )
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const upcomingAppointments = filteredAppointments.filter(apt => {
+    const appointmentDate = new Date(apt.date)
+    appointmentDate.setHours(0, 0, 0, 0)
+    return (apt.status === 'confirmed' || apt.status === 'pending') && appointmentDate >= today
+  })
+  
+  const pastAppointments = filteredAppointments.filter(apt => {
+    const appointmentDate = new Date(apt.date)
+    appointmentDate.setHours(0, 0, 0, 0)
+    return apt.status === 'completed' || apt.status === 'cancelled' || appointmentDate < today
+  })
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen">
         <Sidebar userRole="patient" userName="John Doe" />
@@ -185,7 +174,7 @@ export default function PatientAppointmentsPage() {
       <Sidebar userRole="patient" userName="John Doe" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="My Appointments" subtitle="View and manage your medical appointments" />
+        <DashboardHeader />
 
         <main className="flex-1 overflow-y-auto p-6">
           <AppointmentStats 

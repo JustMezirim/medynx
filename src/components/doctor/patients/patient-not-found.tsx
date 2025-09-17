@@ -8,7 +8,7 @@ export function PatientNotFound() {
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <Sidebar userRole="doctor" userName="Doctor" />
       <div className="flex-1 flex flex-col">
-        <DashboardHeader title="Patient Not Found" />
+        <DashboardHeader  />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-2">Patient not found</h2>

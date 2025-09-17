@@ -59,7 +59,7 @@ export function EditPatientForm({ patient, onSuccess, onCancel }: EditPatientFor
         const error = await response.json()
         showToast.error("Update failed", error.message)
       }
-    } catch (error) {
+    } catch {
       showToast.error("Error", "Something went wrong")
     } finally {
       setIsLoading(false)
@@ -135,7 +135,6 @@ export function EditPatientForm({ patient, onSuccess, onCancel }: EditPatientFor
             <SelectContent>
               <SelectItem value="Male">Male</SelectItem>
               <SelectItem value="Female">Female</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
             </SelectContent>
           </Select>
         </div>

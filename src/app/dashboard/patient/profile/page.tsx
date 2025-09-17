@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useState  } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { ProfileHeader } from "@/components/patient/profile/ProfileHeader"
@@ -10,26 +10,24 @@ import { PersonalInfoForm } from "@/components/patient/profile/PersonalInfoForm"
 import { EmergencyContact } from "@/components/patient/profile/EmergencyContact"
 import { MedicalInformation } from "@/components/patient/profile/MedicalInformation"
 import { showToast } from "@/components/ui/toast-helper"
-import { LoadingSpinner } from "@/components/admin"
+import { Button } from "@/components/ui/button"
 
 interface PatientProfile {
   firstName: string
   lastName: string
   email: string
   phone: string
-  dateOfBirth: string
-  gender: string
-  address: string
+  dateOfBirth?: string
+  gender?: string
+  address?: string
 }
 
 export default function PatientProfilePage() {
   const [profile, setProfile] = useState<PatientProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    fetchProfile()
-  }, [])
+  // Replaced with React Query
 
   const fetchProfile = async () => {
     try {
@@ -37,6 +35,7 @@ export default function PatientProfilePage() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Profile data:', data.profile)
         setProfile(data.profile)
       } else {
         showToast.error("Failed to load profile")
@@ -45,7 +44,7 @@ export default function PatientProfilePage() {
       console.error("Error fetching profile:", error)
       showToast.error("Failed to load profile")
     } finally {
-      setLoading(false)
+      // Loading handled by React Query
     }
   }
 
@@ -87,7 +86,7 @@ export default function PatientProfilePage() {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen">
         <Sidebar userRole="patient" userName="John Doe" />
@@ -103,35 +102,46 @@ export default function PatientProfilePage() {
   }
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar userRole="patient" userName="John Doe" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="My Profile" subtitle="Manage your personal information and preferences" />
+        <DashboardHeader />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-10xl mx-auto">
-            <div className="mb-8">
-              <ProfileHeader firstName={profile?.firstName} lastName={profile?.lastName} />
+          <form onSubmit={handleSubmit}>
+            <div className="max-w-10xl mx-auto space-y-6">
+              {profile ? (
+                <>
+                  <ProfileHeader firstName={profile?.firstName} lastName={profile?.lastName} />
+                  <PersonalInfoForm profile={profile} />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <MedicalInformation />
+                    <EmergencyContact />
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={saving}>
+                      {saving ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        "Save All Changes"
+                      )}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-500">No profile data available. Please try refreshing the page.</p>
+                <button onClick={fetchProfile} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+                  Retry
+                </button>
+                </div>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-              <div className="xl:col-span-3">
-                {profile && (
-                  <PersonalInfoForm 
-                    profile={profile} 
-                    saving={saving} 
-                    onSubmit={handleSubmit} 
-                  />
-                )}
-              </div>
-
-              <div className="xl:col-span-1 space-y-6">
-                <EmergencyContact />
-                <MedicalInformation />
-              </div>
-            </div>
-          </div>
+          </form>
         </main>
       </div>
     </div>

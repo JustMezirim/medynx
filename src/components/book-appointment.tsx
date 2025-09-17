@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { formatDateForStorage } from "@/lib/date-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, Clock, User, Video, MapPin, DollarSign, CheckCircle2, AlertCircle, Stethoscope } from "lucide-react"
+
+import { Calendar, Clock, User, Video, DollarSign, CheckCircle2, AlertCircle, Stethoscope } from "lucide-react"
 import { showToast } from "@/components/ui/toast-helper"
 
 interface Doctor {
@@ -37,21 +38,14 @@ interface BookAppointmentProps {
 export function BookAppointment({ doctorId }: BookAppointmentProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string>("")
-  const [selectedType, setSelectedType] = useState<"video" | "in-person">("video")
+  const selectedType = "video"
   const [symptoms, setSymptoms] = useState("")
   const [doctor, setDoctor] = useState<Doctor | null>(null)
   const [availability, setAvailability] = useState<Record<string, DayAvailability>>({})
   const [loading, setLoading] = useState(false)
   const [bookingStep, setBookingStep] = useState<"select" | "details" | "confirm">("select")
 
-  useEffect(() => {
-    if (doctorId) {
-      fetchDoctorInfo()
-      fetchAvailability()
-    }
-  }, [doctorId])
-
-  const fetchDoctorInfo = async () => {
+  const fetchDoctorInfo = useCallback(async () => {
     try {
       const response = await fetch(`/api/doctor/${doctorId}`)
       if (response.ok) {
@@ -61,50 +55,74 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
     } catch (error) {
       console.error("Error fetching doctor info:", error)
     }
-  }
+  }, [doctorId])
 
-  const fetchAvailability = async () => {
+  const fetchAvailability = useCallback(async () => {
     try {
-      // Fetch availability for the next 30 days
-      const availabilityMap: Record<string, DayAvailability> = {}
-      const today = new Date()
-      
-      for (let i = 1; i <= 30; i++) {
-        const date = new Date(today)
-        date.setDate(today.getDate() + i)
-        const dateKey = date.toISOString().split("T")[0]
+      // Fetch all availability for this doctor at once
+      const response = await fetch(`/api/availability/doctor?doctorId=${doctorId}`)
+      if (response.ok) {
+        const data = await response.json()
+        const availabilityMap: Record<string, DayAvailability> = {}
         
-        try {
-          const response = await fetch(`/api/availability?doctorId=${doctorId}&date=${dateKey}`)
-          if (response.ok) {
-            const data = await response.json()
-            if (data.availability) {
-              availabilityMap[dateKey] = {
-                date: dateKey,
-                slots: data.availability.timeSlots.map((slot: any) => ({
-                  time: slot.time,
-                  isAvailable: !slot.isBooked
-                }))
-              }
+        if (data.availabilities) {
+          data.availabilities.forEach((avail: { date: string; timeSlots: { time: string; isBooked: boolean }[] }) => {
+            const dateKey = formatDateForStorage(avail.date)
+            availabilityMap[dateKey] = {
+              date: dateKey,
+              slots: avail.timeSlots.map((slot: { time: string; isBooked: boolean }) => ({
+                time: slot.time,
+                isAvailable: !slot.isBooked
+              }))
             }
-          }
-        } catch (error) {
-          // Skip this date if there's an error
-          continue
+          })
         }
+        
+        console.log('Fetched availability:', availabilityMap)
+        setAvailability(availabilityMap)
       }
-      
-      setAvailability(availabilityMap)
     } catch (error) {
       console.error('Error fetching availability:', error)
     }
-  }
+  }, [doctorId])
+
+  useEffect(() => {
+    if (doctorId) {
+      fetchDoctorInfo()
+      fetchAvailability()
+    }
+  }, [doctorId, fetchDoctorInfo, fetchAvailability])
 
   const getAvailableSlots = () => {
     if (!selectedDate) return []
-    const dateKey = selectedDate.toISOString().split("T")[0]
+    const dateKey = formatDateForStorage(selectedDate)
     const dayAvailability = availability[dateKey]
-    return dayAvailability?.slots.filter(slot => slot.isAvailable) || []
+    
+    if (!dayAvailability) return []
+    
+    const now = new Date()
+    const isToday = selectedDate.toDateString() === now.toDateString()
+    
+    let availableSlots = dayAvailability.slots.filter(slot => slot.isAvailable)
+    
+    // Filter out past times if it's today
+    if (isToday) {
+      availableSlots = availableSlots.filter(slot => {
+        const [time, period] = slot.time.split(' ')
+        const [hours, minutes] = time.split(':')
+        let hour24 = parseInt(hours)
+        
+        if (period === 'PM' && hour24 !== 12) hour24 += 12
+        if (period === 'AM' && hour24 === 12) hour24 = 0
+        
+        const slotTime = new Date()
+        slotTime.setHours(hour24, parseInt(minutes), 0, 0)
+        
+        return slotTime > now
+      })
+    }
+    
+    return availableSlots
   }
 
   const handleBookAppointment = async () => {
@@ -119,7 +137,7 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
         },
         body: JSON.stringify({
           doctorId: doctor._id,
-          date: selectedDate.toISOString().split('T')[0],
+          date: formatDateForStorage(selectedDate),
           timeSlot: selectedTime,
           type: selectedType,
           symptoms: symptoms.trim() || undefined
@@ -170,17 +188,37 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
   }
 
   const getAvailableDates = () => {
-    return Object.keys(availability).filter(dateKey => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    console.log('Today:', today.toDateString())
+    console.log('Availability keys:', Object.keys(availability))
+    
+    const todayString = formatDateForStorage(today)
+    
+    const availableDates = Object.keys(availability).filter(dateKey => {
       const dayAvailability = availability[dateKey]
-      return dayAvailability.slots.some(slot => slot.isAvailable)
-    }).map(dateKey => new Date(dateKey))
+      const hasSlots = dayAvailability.slots.some(slot => slot.isAvailable)
+      
+      return dateKey >= todayString && hasSlots
+    }).map(dateKey => {
+      const [year, month, day] = dateKey.split('-').map(Number)
+      return new Date(year, month - 1, day)
+    })
+    
+    console.log('Available dates:', availableDates)
+    return availableDates
+  }
+
+  const hasAnyAvailability = () => {
+    return Object.keys(availability).length > 0 && getAvailableDates().length > 0
   }
 
   const renderCalendar = () => {
     const today = new Date()
     const currentMonth = selectedDate || today
     const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-    const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
+
     const startDate = new Date(firstDay)
     startDate.setDate(startDate.getDate() - firstDay.getDay())
 
@@ -194,8 +232,16 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
       const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
       const isToday = date.toDateString() === today.toDateString()
       const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString()
-      const isAvailable = availableDates.some(d => d.toDateString() === date.toDateString())
-      const isPast = date < today
+      const isAvailable = availableDates.some(d => {
+        const availableDate = d.toDateString()
+        const currentDate = date.toDateString()
+        return availableDate === currentDate
+      })
+      
+      if (isAvailable) {
+        console.log('Available date found:', date.toDateString())
+      }
+      const isPast = date < today && !isToday
 
       days.push(
         <button
@@ -210,7 +256,9 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
                 ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
                 : isPast
                   ? 'text-slate-300 cursor-not-allowed'
-                  : 'text-slate-400 cursor-not-allowed'
+                  : isCurrentMonth
+                    ? 'text-slate-400 cursor-not-allowed hover:bg-slate-50'
+                    : 'text-slate-300 cursor-not-allowed'
             }
             ${isToday && !isSelected ? 'ring-2 ring-blue-300' : ''}
             ${!isCurrentMonth ? 'opacity-30' : ''}
@@ -244,6 +292,29 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    )
+  }
+
+  if (Object.keys(availability).length > 0 && !hasAnyAvailability()) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="border-0 shadow-lg bg-white">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Available Appointments</h2>
+            <p className="text-slate-600 mb-6">
+              Dr. {doctor.firstName} {doctor.lastName} currently has no available appointment slots.
+              Please check back later or contact the clinic directly.
+            </p>
+            <Button 
+              variant="outline" 
+              onClick={() => window.history.back()}
+            >
+              Go Back
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -326,17 +397,27 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
-              {renderCalendar()}
-              <div className="flex items-center justify-center space-x-6 mt-6 text-sm">
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-green-200 rounded-full"></div>
-                  <span>Available</span>
+              {getAvailableDates().length === 0 ? (
+                <div className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                  <p className="text-slate-600 mb-4">No available dates found</p>
+                  <p className="text-sm text-slate-500">This doctor hasn&apos;t set their availability yet.</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                  <span>Selected</span>
-                </div>
-              </div>
+              ) : (
+                <>
+                  {renderCalendar()}
+                  <div className="flex items-center justify-center space-x-6 mt-6 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-green-200 rounded-full"></div>
+                      <span>Available</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                      <span>Selected</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -396,27 +477,12 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
           </CardHeader>
           <CardContent className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+                <div className="space-y-2">
                 <Label>Consultation Type</Label>
-                <Select value={selectedType} onValueChange={(value: "video" | "in-person") => setSelectedType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="video">
-                      <div className="flex items-center space-x-2">
-                        <Video className="h-4 w-4" />
-                        <span>Video Consultation</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="in-person">
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>In-Person Visit</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center space-x-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Video className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Video Consultation Only</span>
+                </div>
               </div>
             </div>
 
@@ -477,8 +543,8 @@ export function BookAppointment({ doctorId }: BookAppointmentProps) {
                   </div>
                   <div>
                     <p className="text-sm text-slate-600">Type</p>
-                    <Badge variant={selectedType === "video" ? "default" : "secondary"}>
-                      {selectedType === "video" ? "Video Consultation" : "In-Person Visit"}
+                    <Badge variant="default">
+                      Video Consultation
                     </Badge>
                   </div>
                   <div>

@@ -17,7 +17,7 @@ export function StatsCards({ stats }: StatsCardsProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium opacity-90">Today"s Schedule</CardTitle>
+          <CardTitle className="text-sm font-medium opacity-90">Today&apos;s Schedule</CardTitle>
           <div className="p-2 bg-white/20 rounded-lg">
             <Calendar className="h-4 w-4" />
           </div>

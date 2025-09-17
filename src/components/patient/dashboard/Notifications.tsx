@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import {, useState } from "react"
+import { useNotifications } from '@/hooks/query'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Bell } from "lucide-react"
 
@@ -15,9 +16,7 @@ interface Notification {
 
 export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
+  const [loading, setLoading] = useState(true)(() => {
     fetchNotifications()
   }, [])
 
@@ -56,14 +55,14 @@ export function Notifications() {
   }
 
   return (
-    <Card className="border-0 shadow-lg">
-      <CardHeader className="bg-gradient-to-r from-yellow-50 to-orange-50 border-b">
-        <CardTitle className="flex items-center space-x-2">
-          <Bell className="h-5 w-5 text-yellow-600" />
-          <span>Notifications</span>
+    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm dark:bg-slate-800/80">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center">
+          <Bell className="h-5 w-5 mr-2" />
+          Notifications
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent>
         {loading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (

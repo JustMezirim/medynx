@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useToast } from "@/hooks/use-toast"
+import { showToast } from "@/components/ui/toast-helper"
+import { formatDateForStorage } from "@/lib/date-utils"
 import { AvailabilityStats } from "./availability-stats"
 import { CalendarView } from "./calendar-view"
 import { TimeSlotManager } from "./time-slot-manager"
@@ -49,7 +50,7 @@ export default function DoctorAvailabilityCalendar() {
   const [customTime, setCustomTime] = useState<string>("")
   const [showStats, setShowStats] = useState(false)
   const timeSlotsRef = useRef<HTMLDivElement>(null)
-  const { toast } = useToast()
+
 
   const getWeeklyStats = () => {
     const today = new Date()
@@ -60,13 +61,13 @@ export default function DoctorAvailabilityCalendar() {
       return date.toISOString().split('T')[0]
     })
     
-    const totalSlots = weekDates.reduce((acc, dateKey) => {
-      const dayAvailability = availability[dateKey]
+    const totalSlots = weekDates.reduce((acc, date) => {
+      const dayAvailability = availability[date]
       return acc + (dayAvailability?.slots.length || 0)
     }, 0)
     
-    const availableSlots = weekDates.reduce((acc, dateKey) => {
-      const dayAvailability = availability[dateKey]
+    const availableSlots = weekDates.reduce((acc, date) => {
+      const dayAvailability = availability[date]
       return acc + (dayAvailability?.slots.filter(slot => slot.isAvailable).length || 0)
     }, 0)
     
@@ -82,11 +83,11 @@ export default function DoctorAvailabilityCalendar() {
           const data = await response.json()
           const availabilityMap: Record<string, DayAvailability> = {}
           
-          data.availabilities.forEach((avail: any) => {
+          data.availabilities.forEach((avail: { date: string; timeSlots: { time: string; isBooked: boolean }[] }) => {
             const dateKey = new Date(avail.date).toISOString().split('T')[0]
             availabilityMap[dateKey] = {
               date: dateKey,
-              slots: avail.timeSlots.map((slot: any) => ({
+              slots: avail.timeSlots.map((slot: { time: string; isBooked: boolean }) => ({
                 id: `slot-${slot.time}`,
                 time: slot.time,
                 isAvailable: !slot.isBooked
@@ -201,7 +202,6 @@ export default function DoctorAvailabilityCalendar() {
   const handlePresetSchedule = async (preset: string) => {
     if (!selectedDate || !presetSchedules[preset as keyof typeof presetSchedules]) return
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
     const presetConfig = presetSchedules[preset as keyof typeof presetSchedules]
     
     const slots = await fetchTimeSlots(selectedDate, presetConfig.start, presetConfig.end)
@@ -212,8 +212,8 @@ export default function DoctorAvailabilityCalendar() {
     
     setAvailability(prev => ({
       ...prev,
-      [dateKey]: {
-        date: dateKey,
+      [selectedDate.toISOString().split('T')[0]]: {
+        date: selectedDate.toISOString().split('T')[0],
         slots: updatedSlots
       }
     }))
@@ -232,7 +232,6 @@ export default function DoctorAvailabilityCalendar() {
         hour12: true
       })
       
-      const dateKey = selectedDate.toISOString().split('T')[0]
       const currentSlots = getCurrentDateAvailability()
       const newSlot = {
         id: `slot-${timeString}`,
@@ -241,6 +240,7 @@ export default function DoctorAvailabilityCalendar() {
       }
       
       if (!currentSlots.find(s => s.time === timeString)) {
+        const dateKey = selectedDate.toISOString().split('T')[0]
         setAvailability(prev => ({
           ...prev,
           [dateKey]: {
@@ -252,16 +252,9 @@ export default function DoctorAvailabilityCalendar() {
             })
           }
         }))
-        toast({
-          title: 'Time slot added',
-          description: `${timeString} has been added to your availability`
-        })
+        showToast.success(`${timeString} has been added to your availability`)
       } else {
-        toast({
-          title: "Time slot already exists",
-          description: `${timeString} is already in your availability`,
-          variant: "destructive"
-        })
+        showToast.error(`${timeString} is already in your availability`)
       }
       setCustomTime('')
     }
@@ -272,11 +265,7 @@ export default function DoctorAvailabilityCalendar() {
     
     const sourceDateAvailability = availability[copyFromDate]
     if (!sourceDateAvailability) {
-      toast({
-        title: 'No availability found',
-        description: "No availability found for the selected date",
-        variant: "destructive"
-      })
+      showToast.error("No availability found for the selected date")
       return
     }
     
@@ -290,19 +279,12 @@ export default function DoctorAvailabilityCalendar() {
     }))
     
     setCopyFromDate('')
-    toast({
-      title: "Availability copied",
-      description: "Availability has been successfully copied"
-    })
+    showToast.success("Availability has been successfully copied")
   }
 
   const handleSaveAvailability = async () => {
     if (!selectedDate) {
-      toast({
-        title: "No date selected",
-        description: "Please select a date first",
-        variant: "destructive"
-      })
+      showToast.error("Please select a date first")
       return
     }
     
@@ -311,10 +293,12 @@ export default function DoctorAvailabilityCalendar() {
       const dateKey = selectedDate.toISOString().split('T')[0]
       const currentSlots = getCurrentDateAvailability()
       
-      const timeSlots = currentSlots.map((slot: TimeSlot) => ({
-        time: slot.time,
-        isBooked: !slot.isAvailable
-      }))
+      const timeSlots = currentSlots
+        .filter((slot: TimeSlot) => slot.isAvailable)
+        .map((slot: TimeSlot) => ({
+          time: slot.time,
+          isBooked: false
+        }))
       
       const response = await fetch('/api/availability', {
         method: 'POST',
@@ -322,31 +306,20 @@ export default function DoctorAvailabilityCalendar() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          date: dateKey,
+          date: formatDateForStorage(selectedDate),
           timeSlots
         })
       })
       
       if (response.ok) {
-        toast({
-          title: 'Availability saved',
-          description: "Your availability has been updated successfully"
-        })
+        showToast.success("Your availability has been updated successfully")
       } else {
         const error = await response.json()
-        toast({
-          title: "Save failed",
-          description: error.message || "Failed to save availability",
-          variant: "destructive"
-        })
+        showToast.error(error.message || "Failed to save availability")
       }
     } catch (error) {
       console.error('Error saving availability:', error)
-      toast({
-        title: 'Save failed',
-        description: "Failed to save availability",
-        variant: "destructive"
-      })
+      showToast.error("Failed to save availability")
     } finally {
       setLoading(false)
     }
@@ -389,25 +362,14 @@ export default function DoctorAvailabilityCalendar() {
           return newAvailability
         })
         
-        toast({
-          title: 'Availability deleted',
-          description: "Your availability for this date has been completely removed"
-        })
+        showToast.success("Your availability for this date has been completely removed")
       } else {
         const error = await response.json()
-        toast({
-          title: "Delete failed",
-          description: error.message || "Failed to delete availability",
-          variant: "destructive"
-        })
+        showToast.error(error.message || "Failed to delete availability")
       }
     } catch (error) {
       console.error('Error deleting availability:', error)
-      toast({
-        title: 'Delete failed',
-        description: "Failed to delete availability",
-        variant: "destructive"
-      })
+      showToast.error("Failed to delete availability")
     } finally {
       setLoading(false)
     }

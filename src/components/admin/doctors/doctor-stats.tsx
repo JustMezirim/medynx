@@ -10,10 +10,23 @@ interface DoctorStats {
 }
 
 interface DoctorStatsProps {
-  stats: DoctorStats
+  stats?: DoctorStats
 }
 
 export function DoctorStatsCards({ stats }: DoctorStatsProps) {
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i} className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-slate-200 to-slate-300">
+            <CardContent className="p-6">
+              <div className="h-16 bg-slate-300 animate-pulse rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -24,7 +37,7 @@ export function DoctorStatsCards({ stats }: DoctorStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.total}</div>
+          <div className="text-3xl font-bold">{stats?.total || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <TrendingUp className="h-3 w-3 mr-1" />
             <span>All registered</span>
@@ -41,9 +54,9 @@ export function DoctorStatsCards({ stats }: DoctorStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.verified}</div>
+          <div className="text-3xl font-bold">{stats?.verified || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
-            <span>{stats.total > 0 ? Math.round((stats.verified / stats.total) * 100) : 0}% of total</span>
+            <span>{(stats?.total || 0) > 0 ? Math.round(((stats?.verified || 0) / (stats?.total || 1)) * 100) : 0}% of total</span>
           </div>
         </CardContent>
         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
@@ -57,7 +70,7 @@ export function DoctorStatsCards({ stats }: DoctorStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.pending}</div>
+          <div className="text-3xl font-bold">{stats?.pending || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Awaiting verification</span>
           </div>
@@ -73,7 +86,7 @@ export function DoctorStatsCards({ stats }: DoctorStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.active}</div>
+          <div className="text-3xl font-bold">{stats?.active || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Currently active</span>
           </div>
@@ -89,7 +102,7 @@ export function DoctorStatsCards({ stats }: DoctorStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.inactive}</div>
+          <div className="text-3xl font-bold">{stats?.inactive || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Deactivated accounts</span>
           </div>

@@ -58,7 +58,7 @@ const LoginForm = () => {
           showToast.error("Login failed", data.message || "Invalid credentials")
         }
       }
-    } catch (error) {
+    } catch {
       showToast.error("Error", "Something went wrong. Please try again.")
     } finally {
       setIsLoading(false)
@@ -195,7 +195,7 @@ const LoginForm = () => {
                 transition={{ duration: 0.5, delay: 1.1 }}
               >
                 <p className="text-gray-600">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link href="/register" className="text-blue-600 hover:underline font-semibold">
                     Sign up
                   </Link>

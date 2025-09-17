@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { UserPlus, Users, Calendar, CreditCard, Video } from "lucide-react"
 
 const HowItWorksSection = () => {
   const steps = [
@@ -9,7 +10,7 @@ const HowItWorksSection = () => {
       step: 1,
       title: "Sign Up",
       description: "Create your account with basic information",
-      icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+      icon: UserPlus,
       color: "blue",
       side: "left"
     },
@@ -17,7 +18,7 @@ const HowItWorksSection = () => {
       step: 2,
       title: "Browse Doctors",
       description: "Choose from verified specialists",
-      icon: "M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z",
+      icon: Users,
       color: "teal",
       side: "right"
     },
@@ -25,7 +26,7 @@ const HowItWorksSection = () => {
       step: 3,
       title: "Book Appointment",
       description: "Select your preferred date and time",
-      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+      icon: Calendar,
       color: "green",
       side: "left"
     },
@@ -33,7 +34,7 @@ const HowItWorksSection = () => {
       step: 4,
       title: "Make Payment",
       description: "Secure payment via Paystack",
-      icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+      icon: CreditCard,
       color: "purple",
       side: "right"
     },
@@ -41,7 +42,7 @@ const HowItWorksSection = () => {
       step: 5,
       title: "Join Video Call",
       description: "Connect with your doctor instantly",
-      icon: "M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z",
+      icon: Video,
       color: "orange",
       side: "left"
     }
@@ -99,9 +100,7 @@ const HowItWorksSection = () => {
                   whileHover={{ scale: 1.2, rotate: 360 }}
                 >
                   <div className={`w-20 h-20 bg-gradient-to-br from-${item.color}-500 to-${item.color}-600 rounded-full flex items-center justify-center shadow-xl`}>
-                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                    </svg>
+                    <item.icon className="w-10 h-10 text-white" />
                   </div>
                   <motion.div 
                     className={`absolute -top-2 -right-2 w-8 h-8 bg-${item.color}-100 rounded-full flex items-center justify-center`}

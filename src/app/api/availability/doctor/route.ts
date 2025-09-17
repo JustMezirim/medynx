@@ -7,6 +7,19 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
+    const { searchParams } = new URL(request.url)
+    const doctorId = searchParams.get("doctorId")
+    
+    if (doctorId) {
+      // Public access for patients to view doctor availability
+      const availabilities = await Availability.find({
+        doctor: doctorId
+      }).sort({ date: 1 })
+      
+      return NextResponse.json({ availabilities })
+    }
+
+    // Doctor accessing their own availability
     const token = request.cookies.get("token")?.value
     if (!token) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 })

@@ -42,9 +42,7 @@ export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormPr
     bio: doctor.bio || ""
   })
 
-  useEffect(() => {
-    fetchSpecializations()
-  }, [])
+  // Fetch replaced with React Query
 
   const fetchSpecializations = async () => {
     try {
@@ -82,7 +80,7 @@ export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormPr
         const error = await response.json()
         showToast.error("Update failed", error.message)
       }
-    } catch (error) {
+    } catch {
       showToast.error("Error", "Something went wrong")
     } finally {
       setIsLoading(false)
