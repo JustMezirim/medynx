@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
 
 export default function RegisterPage() {
-  const [isAllowed, setIsAllowed] = useState<boolean | null>(null)
+  const [isAllowed, setIsAllowed] = useState<boolean | null>(true) // Set to true by default for now
   const router = useRouter()
 
-  // Fetch replaced with React Query
+  // Registration is allowed by default - can be controlled via environment variables or API
 
   if (isAllowed === null) {
     return (

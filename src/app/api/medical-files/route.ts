@@ -1,109 +1,87 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
-import MedicalFile from "@/lib/models/MedicalFile"
 import { verifyToken } from "@/lib/auth"
+import MedicalFile from "@/lib/models/MedicalFile"
+import User from "@/lib/models/User"
 
 export async function GET(request: NextRequest) {
   try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const user = await verifyToken(token)
+    if (!user || user.role !== "doctor") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    let payload
-    try {
-      payload = await verifyToken(token)
-    } catch {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 })
-    }
     const { searchParams } = new URL(request.url)
-    const patientId = searchParams.get("patientId")
     const category = searchParams.get("category")
 
-    // Build query based on user role
-    const query: Record<string, unknown> = {}
-
-    if (payload.role === "patient") {
-      query.patient = payload.userId
-    } else if (payload.role === "doctor") {
-      if (patientId) {
-        query.patient = patientId
-      } else {
-        query.doctor = payload.userId
-      }
-    } else if (payload.role === "admin") {
-      if (patientId) {
-        query.patient = patientId
-      }
-    }
-
+    let query = { uploadedBy: user.userId }
     if (category && category !== "all") {
       query.category = category
     }
 
     const files = await MedicalFile.find(query)
-      .populate("patient", "firstName lastName")
-      .populate("doctor", "firstName lastName")
-      .populate("uploadedBy", "firstName lastName role")
+      .populate('patient', 'firstName lastName')
+      .populate('uploadedBy', 'firstName lastName role')
       .sort({ createdAt: -1 })
 
-    return NextResponse.json({ files })
+    return NextResponse.json({
+      files,
+      total: files.length,
+    })
   } catch (error) {
     console.error("Error fetching medical files:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const user = await verifyToken(token)
+    if (!user || user.role !== "doctor") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    const data = await request.json()
+    const { patientId, category, description, fileName, fileUrl, fileType, fileSize } = data
+
+    // Verify patient exists
+    const patient = await User.findById(patientId)
+    if (!patient || patient.role !== 'patient') {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 })
     }
 
-    let payload
-    try {
-      payload = await verifyToken(token)
-    } catch {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 })
-    }
-    const { patientId, fileName, fileUrl, fileType, fileSize, category, description, appointmentId } =
-      await request.json()
-
-    // Determine patient ID based on user role
-    let finalPatientId = patientId
-    if (payload.role === "patient") {
-      finalPatientId = payload.userId
-    }
-
-    const medicalFile = new MedicalFile({
-      patient: finalPatientId,
-      doctor: payload.role === "doctor" ? payload.userId : undefined,
-      appointment: appointmentId,
+    const newFile = await MedicalFile.create({
       fileName,
       fileUrl,
       fileType,
       fileSize,
       category,
       description,
-      uploadedBy: payload.userId,
+      patient: patientId,
+      uploadedBy: user.userId
     })
 
-    await medicalFile.save()
+    const populatedFile = await MedicalFile.findById(newFile._id)
+      .populate('patient', 'firstName lastName')
+      .populate('uploadedBy', 'firstName lastName role')
 
-    return NextResponse.json(
-      {
-        message: "File uploaded successfully",
-        file: medicalFile,
-      },
-      { status: 201 },
-    )
+    return NextResponse.json(populatedFile, { status: 201 })
   } catch (error) {
     console.error("Error uploading medical file:", error)
-    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

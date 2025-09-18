@@ -1,13 +1,13 @@
 import mongoose from "mongoose"
 
-const SettingsSchema = new mongoose.Schema({
+const settingsSchema = new mongoose.Schema({
   siteName: {
     type: String,
     default: "Medynx"
   },
   contactEmail: {
     type: String,
-    default: "admin@Medynx.com"
+    default: "admin@medynx.com"
   },
   allowRegistration: {
     type: Boolean,
@@ -21,4 +21,6 @@ const SettingsSchema = new mongoose.Schema({
   timestamps: true
 })
 
-export default mongoose.models.Settings || mongoose.model("Settings", SettingsSchema)
+const Settings = mongoose.models.Settings || mongoose.model("Settings", settingsSchema)
+
+export default Settings

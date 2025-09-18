@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating specialization:", error)
     if ((error as { code?: number }).code === 11000) {
-      return NextResponse.json({ message: "Specialization already exists" }, { status: 400 })
+      return NextResponse.json({ message: "A specialization with this name already exists" }, { status: 409 })
     }
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }

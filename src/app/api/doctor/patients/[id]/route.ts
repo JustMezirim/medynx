@@ -1,59 +1,54 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
+import { verifyToken } from "@/lib/auth"
 import User from "@/lib/models/User"
 import Appointment from "@/lib/models/Appointment"
-import { verifyToken } from "@/lib/auth"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
+    const token = request.cookies.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const user = await verifyToken(token)
+    if (!user || user.role !== "doctor") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
-
-    let payload
-    try {
-      payload = await verifyToken(token)
-    } catch {
-      return NextResponse.json({ message: "Invalid token" }, { status: 401 })
-    }
+    const { id } = params
     
-    if (payload.role !== "doctor") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 })
+    const patient = await User.findById(id).select('-password')
+    if (!patient || patient.role !== 'patient') {
+      return NextResponse.json({ error: "Patient not found" }, { status: 404 })
     }
 
-    const { id: patientId } = await params
-
-    // Verify this patient has appointments with this doctor
-    const hasAppointment = await Appointment.findOne({
-      doctor: payload.userId,
-      patient: patientId
+    // Get appointment statistics for this patient
+    const appointments = await Appointment.find({ 
+      patient: id,
+      doctor: user.userId 
     })
 
-    if (!hasAppointment) {
-      return NextResponse.json({ message: "Patient not found" }, { status: 404 })
+    const appointmentsCount = appointments.length
+    const lastAppointment = appointments.length > 0 
+      ? appointments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+      : null
+
+    const patientData = {
+      ...patient.toObject(),
+      appointmentsCount,
+      lastAppointment: lastAppointment?.date,
+      lastStatus: lastAppointment?.status
     }
 
-    // Get patient details
-    const patient = await User.findById(patientId)
-      .select("firstName lastName email phone dateOfBirth gender address")
-      .lean()
-
-    if (!patient) {
-      return NextResponse.json({ message: "Patient not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ patient })
+    return NextResponse.json({ patient: patientData })
   } catch (error) {
     console.error("Error fetching patient details:", error)
-    return NextResponse.json({ 
-      message: "Internal server error", 
-      error: error instanceof Error ? error.message : "Unknown error"
-    }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

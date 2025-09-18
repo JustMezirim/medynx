@@ -41,6 +41,7 @@ export const useUpdateDoctor = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] })
       queryClient.invalidateQueries({ queryKey: ['doctor-stats'] })
+      queryClient.refetchQueries({ queryKey: ['doctors'] })
     },
   })
 }

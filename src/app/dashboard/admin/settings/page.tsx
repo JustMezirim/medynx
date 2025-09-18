@@ -93,6 +93,28 @@ export default function AdminSettingsPage() {
     newPassword: "",
     confirmPassword: ""
   })
+
+  useEffect(() => {
+    fetchCurrentProfile()
+  }, [])
+
+  const fetchCurrentProfile = async () => {
+    try {
+      const response = await fetch('/api/profile')
+      if (response.ok) {
+        const data = await response.json()
+        const user = data.user || data.profile || data
+        setProfile(prev => ({
+          ...prev,
+          firstName: user.firstName || 'Admin',
+          lastName: user.lastName || 'User',
+          email: user.email || 'admin@Medynx.com'
+        }))
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error)
+    }
+  }
   const [showAddAdmin, setShowAddAdmin] = useState(false)
   const [addingAdmin, setAddingAdmin] = useState(false)
   const [updatingProfile, setUpdatingProfile] = useState(false)
@@ -108,6 +130,22 @@ export default function AdminSettingsPage() {
     description: ""
   })
   const [addingSpecialization, setAddingSpecialization] = useState(false)
+
+  useEffect(() => {
+    fetchSpecializations()
+  }, [])
+
+  const fetchSpecializations = async () => {
+    try {
+      const response = await fetch('/api/admin/specializations')
+      if (response.ok) {
+        const data = await response.json()
+        setSpecializations(data.specializations || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch specializations:', error)
+    }
+  }
 
   const handleAddAdmin = async () => {
     if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || newAdmin.permissions.length === 0) {
@@ -198,6 +236,7 @@ export default function AdminSettingsPage() {
         showToast.success('Specialization added successfully')
         setNewSpecialization({ name: "", description: "" })
         setShowAddSpecialization(false)
+        fetchSpecializations() // Refresh the list
       } else {
         showToast.error("Failed to add specialization")
       }

@@ -6,6 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(date: string | Date) {
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // Parse YYYY-MM-DD directly without Date constructor
+    const [year, month, day] = date.split('-')
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ]
+    return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}, ${year}`
+  }
   return new Date(date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",

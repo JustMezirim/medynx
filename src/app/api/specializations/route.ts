@@ -7,7 +7,10 @@ export async function GET() {
     await connectDB()
     const specializations = await Specialization.find().sort({ name: 1 })
     return NextResponse.json({ 
-      specializations: specializations.map(spec => spec.name) 
+      specializations: specializations.map(spec => ({
+        name: spec.name,
+        description: spec.description || ''
+      }))
     })
   } catch (error) {
     console.error("Error fetching specializations:", error)

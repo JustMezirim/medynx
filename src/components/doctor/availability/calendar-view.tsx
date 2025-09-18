@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import { formatDateForStorage } from "@/lib/date-utils"
 
 interface DayAvailability {
   date: string
@@ -31,7 +32,7 @@ export function CalendarView({ selectedDate, onDateSelect, availability }: Calen
   }
   
   const getDateStatus = (date: Date) => {
-    const dateKey = date.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(date)
     const dayAvailability = availability[dateKey]
     
     if (!dayAvailability) return null

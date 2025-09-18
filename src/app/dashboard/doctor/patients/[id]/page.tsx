@@ -1,6 +1,5 @@
 "use client"
 
-import {, useState, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
@@ -9,80 +8,22 @@ import { PatientInfoCard } from "@/components/doctor/patients/patient-info-card"
 import { AppointmentHistory } from "@/components/doctor/patients/appointment-history"
 import { LoadingSpinner } from "@/components/admin"
 import { PatientNotFound } from "@/components/doctor/patients/patient-not-found"
-import { showToast } from "@/components/ui/toast-helper"
-
-interface Patient {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  dateOfBirth: string
-  gender: string
-  address?: string
-}
-
-interface Appointment {
-  _id: string
-  date: string
-  timeSlot: string
-  status: string
-  type: string
-  symptoms?: string
-  diagnosis?: string
-  prescription?: string
-}
+import { usePatientDetails } from "@/hooks/doctor/use-doctor-patients"
+import { getAppointmentStatusColor } from "@/components/ui/status-colors"
 
 export default function PatientDetailPage() {
   const params = useParams()
   const patientId = params.id as string
-  const [patient, setPatient] = useState<Patient | null>(null)
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
 
-  const fetchPatientDetails = useCallback(async () => {
-    try {
-      const [patientRes, appointmentsRes] = await Promise.all([
-        fetch(`/api/doctor/patients/${patientId}`),
-        fetch(`/api/appointment?patientId=${patientId}`)
-      ])
+  const { data, isLoading, error } = usePatientDetails(patientId)
+  const patient = data?.patient
+  const appointments = data?.appointments || []
 
-      if (patientRes.ok) {
-        const patientData = await patientRes.json()
-        setPatient(patientData.patient)
-      }
-
-      if (appointmentsRes.ok) {
-        const appointmentsData = await appointmentsRes.json()
-        setAppointments(appointmentsData.appointments || [])
-      }
-    } catch (error) {
-      console.error("Error fetching patient details:", error)
-      showToast.error("Failed to load patient details")
-    } finally {
-      setLoading(false)
-    }
-  }, [patientId])(() => {
-    if (patientId) {
-      fetchPatientDetails()
-    }
-  }, [patientId, fetchPatientDetails])
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed": return "bg-blue-100 text-blue-800"
-      case "completed": return "bg-green-100 text-green-800"
-      case "cancelled": return "bg-red-100 text-red-800"
-      case "pending": return "bg-yellow-100 text-yellow-800"
-      default: return "bg-gray-100 text-gray-800"
-    }
-  }
-
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />
   }
 
-  if (!patient) {
+  if (error || !patient) {
     return <PatientNotFound />
   }
 
@@ -100,7 +41,7 @@ export default function PatientDetailPage() {
           <div className="max-w-10xl mx-auto space-y-6">
             <BackNavigation />
             <PatientInfoCard patient={patient} />
-            <AppointmentHistory appointments={appointments} getStatusColor={getStatusColor} />
+            <AppointmentHistory appointments={appointments} getStatusColor={getAppointmentStatusColor} />
           </div>
         </main>
       </div>

@@ -373,8 +373,8 @@ const RegisterForm = () => {
                                 <SelectValue placeholder="Select specialization" />
                               </SelectTrigger>
                               <SelectContent>
-                                {specializations.map((spec) => (
-                                  <SelectItem key={spec.name} value={spec.name}>
+                                {specializations.map((spec, index) => (
+                                  <SelectItem key={`${spec.name}-${index}`} value={spec.name}>
                                     {spec.name}
                                   </SelectItem>
                                 ))}
