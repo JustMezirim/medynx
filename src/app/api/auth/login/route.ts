@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
       }, { status: 403 })
     }
 
+    // Check email verification status
+    if (!user.emailVerified) {
+      return NextResponse.json({ 
+        message: "Please verify your email before logging in.",
+        emailNotVerified: true,
+        email: user.email
+      }, { status: 403 })
+    }
+
     // Check doctor verification status
     if (user.role === "doctor" && user.isVerified === false) {
       return NextResponse.json({ 
@@ -67,6 +76,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
+        emailVerified: user.emailVerified,
       },
       success: true,
     })

@@ -6,7 +6,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) => 
       authApi.login(email, password),
-    onSuccess: (data) => {
+    onSuccess: (data: { user: { role: string } }) => {
       showToast.success("Login successful!", "Welcome back to Medynx.")
       
       let dashboardUrl
@@ -20,8 +20,17 @@ export const useLogin = () => {
       
       window.location.href = dashboardUrl
     },
-    onError: (error: Error) => {
-      showToast.error("Login failed", error.message || "Invalid credentials")
+    onError: (error: unknown) => {
+      // Handle email verification error
+      const errorObj = error as { emailNotVerified?: boolean; message?: string; email?: string }
+      if (errorObj.emailNotVerified || errorObj.message?.includes('verify your email')) {
+        showToast.error("Email not verified", "Please verify your email before logging in.")
+        setTimeout(() => {
+          window.location.href = `/verify-email?email=${encodeURIComponent(errorObj.email || '')}`
+        }, 4000) // Wait 4 seconds for toast to be visible
+        return
+      }
+      showToast.error("Login failed", errorObj.message || "Invalid credentials")
     },
   })
 }

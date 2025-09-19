@@ -2,24 +2,31 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
-import Settings from "@/lib/models/Settings"
-import { notifyAllAdmins } from "@/lib/notifications"
-import { sendWelcomeEmail, sendDoctorRegistrationEmail } from "@/lib/email"
+
+// Removed email imports - emails will be sent after verification
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB()
 
-    // Check settings
-    const settings = await Settings.findOne()
-    if (settings?.maintenanceMode) {
-      return NextResponse.json({ message: "System is under maintenance. Please try again later." }, { status: 503 })
-    }
-    if (settings && !settings.allowRegistration) {
-      return NextResponse.json({ message: "Registration is currently disabled." }, { status: 403 })
+    const body = await request.json()
+    console.log('Registration request body:', body)
+    
+    const { firstName, lastName, email, phone, password, role, dateOfBirth, gender, address, specialization, licenseNumber, experience, consultationFee, bio } = body
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !password || !role) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
     }
 
-    const { firstName, lastName, email, phone, password, role, dateOfBirth, gender, address, specialization, licenseNumber, experience, consultationFee } = await request.json()
+    // Validate role-specific fields
+    if (role === "patient" && (!dateOfBirth || !gender || !address)) {
+      return NextResponse.json({ message: "Missing required patient fields: dateOfBirth, gender, address" }, { status: 400 })
+    }
+
+    if (role === "doctor" && (!specialization || !licenseNumber || experience === undefined)) {
+      return NextResponse.json({ message: "Missing required doctor fields: specialization, licenseNumber, experience" }, { status: 400 })
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email })
@@ -45,44 +52,22 @@ export async function POST(request: NextRequest) {
     if (role === "doctor") {
       userData.specialization = specialization
       userData.licenseNumber = licenseNumber
-      userData.experience = experience || 0
+      userData.experience = parseInt(experience) || 0
       userData.consultationFee = consultationFee || 10000
+      userData.bio = bio || ""
       userData.rating = 0
       userData.isVerified = false // Doctors need admin approval
     } else if (role === "patient") {
-      userData.dateOfBirth = dateOfBirth
+      userData.dateOfBirth = new Date(dateOfBirth)
       userData.gender = gender
       userData.address = address
     }
 
+    console.log('Creating user with data:', userData)
     const user = await User.create(userData)
+    console.log('User created successfully:', user._id)
 
-    // Send emails and notifications
-    try {
-      if (role === "doctor") {
-        await Promise.all([
-          sendDoctorRegistrationEmail(email, firstName, lastName, specialization, licenseNumber, experience || 0),
-          notifyAllAdmins({
-            title: "New Doctor Registration",
-            message: `Dr. ${firstName} ${lastName} has registered and needs approval`,
-            type: "system",
-            relatedId: user._id.toString()
-          })
-        ])
-      } else {
-        await Promise.all([
-          sendWelcomeEmail(email, firstName, lastName),
-          notifyAllAdmins({
-            title: "New User Registration",
-            message: `${firstName} ${lastName} has registered as a ${role}`,
-            type: "system",
-            relatedId: user._id.toString()
-          })
-        ])
-      }
-    } catch (emailError) {
-      console.error("Failed to send registration email:", emailError)
-    }
+    // Don't send welcome email here - it will be sent after email verification
 
     return NextResponse.json({ 
       message: role === "doctor" ? "Registration successful. Awaiting admin approval." : "Registration successful",
@@ -90,6 +75,11 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Registration error:", error)
+    if (error instanceof Error) {
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
+      return NextResponse.json({ message: error.message }, { status: 400 })
+    }
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

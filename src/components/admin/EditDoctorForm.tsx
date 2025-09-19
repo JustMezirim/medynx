@@ -119,7 +119,7 @@ export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormPr
             <SelectValue placeholder="Select specialization" />
           </SelectTrigger>
           <SelectContent>
-            {specializations.map((spec) => (
+            {specializations.map((spec: { name: string }) => (
               <SelectItem key={spec.name} value={spec.name}>
                 {spec.name}
               </SelectItem>

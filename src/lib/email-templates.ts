@@ -528,5 +528,63 @@ export const emailTemplates = {
         </div>
       </div>
     `
+  }),
+
+  emailVerification: (otp: string) => ({
+    subject: "Verify Your Email - Medynx",
+    html: `
+      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="background: #2563eb; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Email Verification</h1>
+        </div>
+        <div style="padding: 30px; background: white;">
+          <p style="font-size: 16px; color: #333;">Your verification code is:</p>
+          
+          <div style="background: #f8fafc; border: 2px dashed #2563eb; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+            <h1 style="color: #2563eb; font-size: 36px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+          </div>
+          
+
+          
+          <div style="background: #f0f9ff; border-left: 4px solid #2563eb; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0; color: #2563eb; font-size: 14px;">⏰ This code will expire in 5 minutes for security purposes.</p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333;">If you didn't request this verification, please ignore this email.</p>
+          <p style="font-size: 16px; color: #333;">Best regards,<br><strong>Medynx Team</strong></p>
+        </div>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 14px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Medynx. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  }),
+
+  passwordResetOTP: (otp: string) => ({
+    subject: "Password Reset Code - Medynx",
+    html: `
+      <div style="font-family: 'Arial', sans-serif; max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+        <div style="background: #dc2626; padding: 30px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset</h1>
+        </div>
+        <div style="padding: 30px; background: white;">
+          <p style="font-size: 16px; color: #333;">Your password reset code is:</p>
+          
+          <div style="background: #fef2f2; border: 2px dashed #dc2626; border-radius: 12px; padding: 30px; margin: 30px 0; text-align: center;">
+            <h1 style="color: #dc2626; font-size: 36px; margin: 0; letter-spacing: 8px; font-weight: bold;">${otp}</h1>
+          </div>
+          
+          <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+            <p style="margin: 0; color: #dc2626; font-size: 14px;">⏰ This code will expire in 10 minutes for security purposes.</p>
+          </div>
+          
+          <p style="font-size: 16px; color: #333;">If you didn't request this password reset, please ignore this email and your password will remain unchanged.</p>
+          <p style="font-size: 16px; color: #333;">Best regards,<br><strong>Medynx Team</strong></p>
+        </div>
+        <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 14px; color: #64748b;">
+          <p style="margin: 0;">© ${new Date().getFullYear()} Medynx. All rights reserved.</p>
+        </div>
+      </div>
+    `
   })
 }

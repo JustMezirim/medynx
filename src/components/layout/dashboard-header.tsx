@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
 import { NotificationBell } from "@/components/ui/notification-bell"
 import { getRoleColor } from "@/components/ui/status-colors"
@@ -11,6 +12,13 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ actions }: DashboardHeaderProps) {
   const { user, isLoading: loading } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -34,12 +42,12 @@ export function DashboardHeader({ actions }: DashboardHeaderProps) {
 
             {/* User Profile */}
             <div className="flex items-center space-x-3 pl-3 border-l border-slate-200">
-              {loading ? (
+              {loading || !mounted ? (
                 <div className="animate-pulse flex items-center space-x-2">
                   <div className="w-8 h-8 bg-slate-200 rounded-full"></div>
                   <div className="hidden sm:block w-20 h-4 bg-slate-200 rounded"></div>
                 </div>
-              ) : user && (
+              ) : user ? (
                 <>
                   <div className="hidden sm:block text-right">
                     <p className="text-sm font-semibold text-slate-900">
@@ -55,6 +63,8 @@ export function DashboardHeader({ actions }: DashboardHeaderProps) {
                     </span>
                   </div>
                 </>
+              ) : (
+                <div className="text-sm text-slate-500">Guest</div>
               )}
             </div>
           </div>

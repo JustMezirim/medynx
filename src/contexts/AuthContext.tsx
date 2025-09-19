@@ -11,6 +11,7 @@ interface User {
   firstName: string
   lastName: string
   role: "patient" | "doctor" | "admin"
+  emailVerified: boolean
 }
 
 interface AuthContextType {
@@ -36,12 +37,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })
 
   const login = async (email: string, password: string) => {
-    const { user: userData } = await authApi.login(email, password)
-    queryClient.setQueryData(['auth-user'], userData)
-    
-    // Redirect based on role
-    const dashboardPath = `/dashboard/${userData.role}`
-    router.push(dashboardPath)
+    try {
+      const { user: userData } = await authApi.login(email, password)
+      
+      queryClient.setQueryData(['auth-user'], userData)
+      
+      // Redirect based on role
+      const dashboardPath = `/dashboard/${userData.role}`
+      router.push(dashboardPath)
+    } catch (error: unknown) {
+      // Handle email not verified error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('verify your email') || (error as { emailNotVerified?: boolean }).emailNotVerified) {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+        return
+      }
+      // Re-throw other errors
+      throw error
+    }
   }
 
   const logout = () => {

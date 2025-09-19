@@ -1,10 +1,35 @@
-interface Specialization {
-  name: string
-  description: string
+export const verifyOTP = async ({ email, otp }: { email: string; otp: string }) => {
+  const response = await fetch('/api/auth/verify-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, otp, type: 'email_verification' })
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Verification failed')
+  }
+  
+  return response.json()
+}
+
+export const sendOTP = async (email: string) => {
+  const response = await fetch('/api/auth/send-otp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, type: 'email_verification' })
+  })
+  
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.message || 'Failed to send OTP')
+  }
+  
+  return response.json()
 }
 
 export const authApi = {
-  login: async (email: string, password: string): Promise<LoginResponse> => {
+  login: async (email: string, password: string) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -16,14 +41,10 @@ export const authApi = {
       throw new Error(error.message || 'Login failed')
     }
     
-    const data = await response.json()
-    return {
-      user: data.user,
-      token: '' // Token is in httpOnly cookie, not needed in response
-    }
+    return response.json()
   },
-
-  register: async (formData: Record<string, unknown>): Promise<void> => {
+  
+  register: async (formData: Record<string, unknown>) => {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -34,35 +55,27 @@ export const authApi = {
       const error = await response.json()
       throw new Error(error.message || 'Registration failed')
     }
+    
+    return response.json()
   },
-
+  
   getProfile: async () => {
-    const response = await fetch('/api/profile')
+    const response = await fetch('/api/auth/me')
+    
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.message || 'Failed to fetch profile')
+      throw new Error('Failed to get profile')
     }
-    const data = await response.json()
-    return data.profile
+    
+    return response.json()
   },
-
-  getSpecializations: async (): Promise<Specialization[]> => {
+  
+  getSpecializations: async () => {
     const response = await fetch('/api/specializations')
-    if (!response.ok) throw new Error('Failed to fetch specializations')
-    const data = await response.json()
-    return data.specializations || []
+    
+    if (!response.ok) {
+      throw new Error('Failed to get specializations')
+    }
+    
+    return response.json()
   }
 }
-
-interface LoginResponse {
-  user: {
-    userId: string
-    email: string
-    firstName: string
-    lastName: string
-    role: "patient" | "doctor" | "admin"
-  }
-  token?: string
-}
-
-export type { LoginResponse, Specialization }

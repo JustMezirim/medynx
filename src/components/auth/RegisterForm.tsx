@@ -13,11 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 
 import { useRegister, useSpecializations } from "@/hooks/useAuth"
+import { EmailVerification } from "./EmailVerification"
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User, Shield, FileText } from "lucide-react"
 
 const RegisterForm = () => {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
+  const [step, setStep] = useState<'register' | 'verify' | 'complete'>('register')
   const registerMutation = useRegister()
   const { data: specializations = [] } = useSpecializations()
   const [formData, setFormData] = useState({
@@ -80,11 +82,63 @@ const RegisterForm = () => {
 
   const handleSubmit = async () => {
     try {
-      await registerMutation.mutateAsync(formData)
-      router.push("/login")
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        // Send OTP for email verification
+        await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: formData.email, type: 'email_verification' })
+        })
+        
+        // Redirect to verification page with email parameter
+        window.location.href = `/verify-email?email=${encodeURIComponent(formData.email)}`
+      } else {
+        console.error('Registration failed:', data.message)
+      }
     } catch {
-      // Error handling is done in the mutation
+      // Error handling
     }
+  }
+
+  if (step === 'verify') {
+    return (
+      <div className="w-full lg:w-3/5 flex items-center justify-center p-6 bg-gray-50">
+        <EmailVerification
+          email={formData.email}
+          onVerified={() => setStep('complete')}
+          // onBack={() => setStep('register')}
+        />
+      </div>
+    )
+  }
+
+  if (step === 'complete') {
+    return (
+      <div className="w-full lg:w-3/5 flex items-center justify-center p-6 bg-gray-50">
+        <Card className="w-full max-w-md mx-auto text-center">
+          <CardContent className="p-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Shield className="h-8 w-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Registration Complete!</h2>
+            <p className="text-muted-foreground mb-6">
+              Your email has been verified. You can now login to your account.
+            </p>
+            <Button onClick={() => router.push('/login')} className="w-full">
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -342,7 +396,7 @@ const RegisterForm = () => {
                                 <SelectValue placeholder="Select specialization" />
                               </SelectTrigger>
                               <SelectContent>
-                                {specializations.map((spec, index) => (
+                                {specializations.map((spec: { name: string }, index: number) => (
                                   <SelectItem key={`${spec.name}-${index}`} value={spec.name}>
                                     {spec.name}
                                   </SelectItem>

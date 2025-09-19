@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
-      isActive: user.isActive
+      isActive: user.isActive,
+      emailVerified: user.emailVerified
     })
   } catch (error) {
     console.error("Profile error:", error)
