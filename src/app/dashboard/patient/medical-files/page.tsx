@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback  } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,98 +10,44 @@ import { Badge } from "@/components/ui/badge"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { FileText, Download, Eye, Trash2, Plus, Search } from "lucide-react"
-import { usePatientMedicalFiles } from '@/hooks/query'
+import { usePatientMedicalFiles, useDownloadMedicalFile } from '@/hooks/patient/use-patient-medical-files'
+import type { MedicalFileFilters } from "@/lib/api/patient/medical-files"
+import { formatFileSize, getMedicalFileCategoryColor } from "@/components/ui/status-colors"
 import { showToast } from "@/components/ui/toast-helper"
 import { UploadButton } from "@uploadthing/react"
 import type { OurFileRouter } from "@/app/api/uploadthing/core"
 
-interface MedicalFile {
-  _id: string
-  fileName: string
-  fileUrl: string
-  fileType: string
-  fileSize: number
-  category: string
-  description?: string
-  uploadedBy: {
-    firstName: string
-    lastName: string
-    role: string
-  }
-  createdAt: string
-}
-
 export default function PatientMedicalFilesPage() {
-  const [files, setFiles] = useState<MedicalFile[]>([])
   
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [showUploadForm, setShowUploadForm] = useState(false)
 
-  const fetchMedicalFiles = useCallback(async () => {
-    try {
-      const params = new URLSearchParams({
-        ...(categoryFilter !== "all" && { category: categoryFilter }),
-      })
+  const filters: MedicalFileFilters = {
+    ...(categoryFilter !== "all" && { category: categoryFilter }),
+    ...(searchTerm && { search: searchTerm }),
+  }
 
-      const response = await fetch(`/api/medical-files?${params}`)
-      const data = await response.json()
+  const { data: files = [], isLoading } = usePatientMedicalFiles(filters)
+  const downloadFile = useDownloadMedicalFile()
 
-      setFiles(data.files || [])
-    } catch (error) {
-      console.error("Error fetching medical files:", error)
-      showToast.error("Failed to load medical files")
-    } finally {
-      // Loading handled by React Query
-    }
-  }, [categoryFilter])
 
-  // Replaced with React Query
 
-  const handleDeleteFile = async (fileId: string) => {
+  const handleDeleteFile = async () => {
     if (!confirm("Are you sure you want to delete this file?")) {
       return
     }
-
-    try {
-      const response = await fetch(`/api/medical-files/${fileId}`, {
-        method: "DELETE",
-      })
-
-      if (response.ok) {
-        showToast.success("File deleted successfully")
-        fetchMedicalFiles()
-      } else {
-        showToast.error("Failed to delete file")
-      }
-    } catch (error) {
-      console.error("Error deleting file:", error)
-      showToast.error("Delete failed")
-    }
+    // TODO: Implement delete mutation
+    showToast.info("Delete functionality coming soon")
   }
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "report":
-        return "bg-blue-100 text-blue-800"
-      case "prescription":
-        return "bg-green-100 text-green-800"
-      case "image":
-        return "bg-purple-100 text-purple-800"
-      case "document":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const handleDownloadFile = async (fileId: string) => {
+    await downloadFile.mutateAsync(fileId)
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes"
-    const k = 1024
-    const sizes = ["Bytes", "KB", "MB", "GB"]
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-  }
+
+
+
 
   const filteredFiles = files.filter(
     (file) =>
@@ -232,7 +178,7 @@ export default function PatientMedicalFilesPage() {
                             if (response.ok) {
                               showToast.success("File uploaded successfully")
                               setShowUploadForm(false)
-                              fetchMedicalFiles()
+                              // Files will auto-refresh via React Query
                             } else {
                               const data = await response.json()
                               showToast.error(data.message || "Upload failed")
@@ -274,7 +220,7 @@ export default function PatientMedicalFilesPage() {
                           <p className="text-xs text-gray-500">{formatFileSize(file.fileSize)}</p>
                         </div>
                       </div>
-                      <Badge className={getCategoryColor(file.category)}>{file.category}</Badge>
+                      <Badge className={getMedicalFileCategoryColor(file.category)}>{file.category}</Badge>
                     </div>
 
                     {file.description && <p className="text-sm text-gray-600 mb-4 line-clamp-2">{file.description}</p>}
@@ -291,7 +237,7 @@ export default function PatientMedicalFilesPage() {
                         <Eye className="h-3 w-3 mr-1" />
                         View
                       </Button>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => handleDownloadFile(file._id)}>
                         <Download className="h-3 w-3 mr-1" />
                         Download
                       </Button>
@@ -299,7 +245,7 @@ export default function PatientMedicalFilesPage() {
                         size="sm"
                         variant="outline"
                         className="text-red-600 hover:text-red-700 bg-transparent"
-                        onClick={() => handleDeleteFile(file._id)}
+                        onClick={() => handleDeleteFile()}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

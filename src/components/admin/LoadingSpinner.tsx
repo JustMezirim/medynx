@@ -8,8 +8,8 @@ interface LoadingSpinnerProps {
 }
 
 export function LoadingSpinner({ 
-  title = "Loading", 
-  subtitle = "Please wait...", 
+  // title = "Loading", 
+  // subtitle = "Please wait...", 
   message = "Loading..." 
 }: LoadingSpinnerProps) {
   return (

@@ -11,6 +11,23 @@ interface DoctorFilters {
   specialization?: string
 }
 
+interface Doctor {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  specialization: string
+  licenseNumber: string
+  experience: number
+  consultationFee: number
+  bio?: string
+  isActive: boolean
+  isVerified: boolean
+  rating?: number
+  createdAt: string
+}
+
 export const useDoctors = (filters: DoctorFilters) => {
   return useQuery({
     queryKey: ['doctors', filters],
@@ -36,7 +53,7 @@ export const useUpdateDoctor = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<Doctor> }) => 
       doctorsApi.updateDoctor(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] })
@@ -62,7 +79,7 @@ export const useBulkUpdateDoctors = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ ids, data }: { ids: string[]; data: any }) => 
+    mutationFn: ({ ids, data }: { ids: string[]; data: Partial<Doctor> }) => 
       doctorsApi.bulkUpdateDoctors(ids, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] })

@@ -31,7 +31,7 @@ export const useProcessRefund = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
       paymentsApi.processRefund(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] })

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { PatientsHeader } from "@/components/doctor/patients/patients-header"
@@ -17,18 +18,17 @@ import { getAppointmentStatusColor } from "@/components/ui/status-colors"
 
 export default function DoctorPatientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const router = useRouter()
 
   const { data, isLoading } = useDoctorPatients()
   const patients = data?.patients || []
 
   const handleViewPatient = (patientId: string) => {
-    // Navigate to patient details
-    window.location.href = `/dashboard/doctor/patients/${patientId}`
+    router.push(`/dashboard/doctor/patients/${patientId}`)
   }
 
   const handleViewMedicalFiles = (patientId: string) => {
-    // Navigate to medical files
-    window.location.href = `/dashboard/doctor/patients/${patientId}/files`
+    router.push(`/dashboard/doctor/patients/${patientId}/files`)
   }
 
   const handleExportPatients = () => {

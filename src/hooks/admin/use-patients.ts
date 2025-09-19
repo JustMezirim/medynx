@@ -11,6 +11,24 @@ interface PatientFilters {
   gender?: string
 }
 
+interface Patient {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  dateOfBirth: string
+  gender: string
+  address?: string
+  isActive: boolean
+  createdAt: string
+  emergencyContact?: string
+  medicalHistory?: string[]
+  appointmentCount?: number
+  lastAppointment?: string
+  totalSpent?: number
+}
+
 export const usePatients = (filters: PatientFilters) => {
   return useQuery({
     queryKey: ['patients', filters],
@@ -30,7 +48,7 @@ export const useUpdatePatient = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<Patient> }) => 
       patientsApi.updatePatient(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] })
@@ -55,7 +73,7 @@ export const useBulkUpdatePatients = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ ids, data }: { ids: string[]; data: any }) => 
+    mutationFn: ({ ids, data }: { ids: string[]; data: Partial<Patient> }) => 
       patientsApi.bulkUpdatePatients(ids, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] })

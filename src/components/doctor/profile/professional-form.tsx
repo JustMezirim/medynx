@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,7 +38,7 @@ export function ProfessionalForm({ profile, onSubmit, saving }: ProfessionalForm
     consultationFee: 0,
     bio: ''
   })
-  const [specializations, setSpecializations] = useState<string[]>([])
+  const [specializations] = useState<string[]>([])
 
   // Fetch replaced with React Query
 

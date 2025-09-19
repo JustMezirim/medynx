@@ -1,6 +1,5 @@
 "use client"
 
-import {, useState, useCallback } from "react"
 import { useParams, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -8,58 +7,23 @@ import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { Calendar, Video, User, CheckCircle } from "lucide-react"
-import { usePatientAppointment } from '@/hooks/query'
+import { usePatientAppointment } from '@/hooks/patient/use-patient-appointments'
 import { showToast } from "@/components/ui/toast-helper"
 
-interface Appointment {
-  _id: string
-  date: string
-  timeSlot: string
-  symptoms: string
-  type: string
-  amount: number
-  status: string
-  paymentStatus: string
-  doctor: {
-    firstName: string
-    lastName: string
-    specialization: string
-  }
-  zoomJoinUrl?: string
-}
 
 export default function AppointmentDetailsPage() {
   const params = useParams()
   const searchParams = useSearchParams()
-  const [appointment, setAppointment] = useState<Appointment | null>(null)
-  const [loading, setLoading] = useState(true)
+  const appointmentId = params.id as string
+  
+  const { data: appointment, isLoading } = usePatientAppointment(appointmentId)
 
-  const fetchAppointment = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/appointment/${params.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAppointment(data.appointment)
-      } else {
-        showToast.error("Appointment not found")
-      }
-    } catch (error) {
-      console.error("Error fetching appointment:", error)
-      showToast.error("Failed to load appointment details")
-    } finally {
-      setLoading(false)
-    }
-  }, [params.id])(() => {
-    if (params.id) {
-      fetchAppointment()
-    }
-    
-    if (searchParams.get("success") === "payment_completed") {
-      showToast.success("Payment completed successfully! Your appointment is confirmed.")
-    }
-  }, [params.id, searchParams, fetchAppointment])
+  // Show success message if payment completed
+  if (searchParams.get("success") === "payment_completed") {
+    showToast.success("Payment completed successfully! Your appointment is confirmed.")
+  }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen">
         <Sidebar userRole="patient" userName="Patient" />

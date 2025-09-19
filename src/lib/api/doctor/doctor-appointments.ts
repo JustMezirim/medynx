@@ -25,7 +25,7 @@ export const doctorAppointmentsApi = {
     return data
   },
 
-  updateAppointment: async (id: string, data: any) => {
+  updateAppointment: async (id: string, data: Record<string, unknown>) => {
     const response = await api.put(`/appointments/${id}`, data)
     return response.data
   }

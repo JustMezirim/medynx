@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { PatientStatsCards } from "@/components/admin/patients/patient-stats"
@@ -38,13 +37,7 @@ interface Patient {
   totalSpent?: number
 }
 
-interface PatientStats {
-  total: number
-  active: number
-  inactive: number
-  newThisMonth: number
-  totalAppointments: number
-}
+
 
 export default function AdminPatientsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -81,8 +74,8 @@ export default function AdminPatientsPage() {
   const deletePatient = useDeletePatient()
   const bulkUpdatePatients = useBulkUpdatePatients()
 
-  const patients = (patientsData as any)?.patients || []
-  const totalPages = (patientsData as any)?.pagination?.pages || 1
+  const patients = patientsData?.patients || []
+  const totalPages = patientsData?.pagination?.pages || 1
 
   const handleAction = (type: string, patientId?: string, value?: boolean) => {
     setConfirmAction({ type, patientId, value })

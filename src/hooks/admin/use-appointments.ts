@@ -39,14 +39,7 @@ interface Appointment {
   prescription?: string
 }
 
-interface AppointmentStats {
-  total: number
-  scheduled: number
-  completed: number
-  cancelled: number
-  todayAppointments: number
-  totalRevenue: number
-}
+
 
 export const useAppointments = (filters: AppointmentFilters) => {
   return useQuery({
@@ -66,7 +59,7 @@ export const useUpdateAppointment = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<Appointment> }) => 
       appointmentsApi.updateAppointment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] })

@@ -40,7 +40,7 @@ export const appointmentsApi = {
     return data
   },
 
-  updateAppointment: async (id: string, updateData: any) => {
+  updateAppointment: async (id: string, updateData: Record<string, unknown>) => {
     const { data } = await api.patch(`/admin/appointments/${id}`, updateData)
     return data
   },

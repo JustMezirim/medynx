@@ -40,7 +40,7 @@ export const paymentsApi = {
     return data
   },
 
-  processRefund: async (id: string, refundData: any) => {
+  processRefund: async (id: string, refundData: Record<string, unknown>) => {
     const { data } = await api.post(`/admin/payments/${id}/refund`, refundData)
     return data
   },

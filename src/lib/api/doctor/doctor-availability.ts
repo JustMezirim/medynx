@@ -20,7 +20,7 @@ export const doctorAvailabilityApi = {
     return data
   },
 
-  saveAvailability: async (availabilityData: { date: string; timeSlots: any[] }) => {
+  saveAvailability: async (availabilityData: { date: string; timeSlots: unknown[] }) => {
     const { data } = await api.post('/availability', availabilityData)
     return data
   },

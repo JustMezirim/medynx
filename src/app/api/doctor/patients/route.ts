@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import { verifyToken } from "@/lib/auth"
-import User from "@/lib/models/User"
+
 import Appointment from "@/lib/models/Appointment"
 
 export async function GET(request: NextRequest) {

@@ -9,7 +9,7 @@ import { Notifications } from "@/components/doctor/dashboard/notifications"
 import { LoadingSpinner } from "@/components/doctor"
 import { useDoctorDashboard } from "@/hooks/doctor/use-doctor-dashboard"
 import { getAppointmentStatusColor } from "@/components/ui/status-colors"
-import type { DashboardStats, TodayAppointment } from "@/lib/api/doctor/doctor-dashboard"
+
 
 export default function DoctorDashboard() {
   const { data, isLoading } = useDoctorDashboard()

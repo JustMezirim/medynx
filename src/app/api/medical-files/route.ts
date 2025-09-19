@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
 
-    let query = { uploadedBy: user.userId }
-    if (category && category !== "all") {
-      query.category = category
+    const query = {
+      uploadedBy: user.userId,
+      ...(category && category !== "all" && { category })
     }
 
     const files = await MedicalFile.find(query)

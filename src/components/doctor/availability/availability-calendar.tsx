@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { showToast } from "@/components/ui/toast-helper"
 import { formatDateForStorage } from "@/lib/date-utils"
-import { formatTime, formatDate } from "@/lib/utils"
+import { formatTime } from "@/lib/utils"
 import { AvailabilityStats } from "./availability-stats"
 import { CalendarView } from "./calendar-view"
 import { TimeSlotManager } from "./time-slot-manager"
@@ -45,7 +45,7 @@ export default function DoctorAvailabilityCalendar() {
   const saveAvailability = useSaveAvailability()
   const deleteAvailability = useDeleteAvailability()
 
-  const timeSlots = timeSlotsData?.slots || []
+  const timeSlots = useMemo(() => timeSlotsData?.slots || [], [timeSlotsData])
 
 
   const getWeeklyStats = () => {

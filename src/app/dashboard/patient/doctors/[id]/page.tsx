@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams } from "next/navigation"
-import {, useState, useCallback } from "react"
+import { useState } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { BookAppointment } from "@/components/book-appointment"
@@ -9,28 +9,11 @@ import { DoctorProfile, DoctorTabs } from "@/components/patient"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { usePatientDoctor } from '@/hooks/query'
+import { usePatientDoctor } from '@/hooks/patient/use-patient-doctors'
+
 import Link from "next/link"
 
-interface Doctor {
-  _id: string
-  firstName: string
-  lastName: string
-  specialization: string
-  experience: number
-  rating: number
-  consultationFee: number
-  bio: string
-  isVerified: boolean
-  education?: string
-  languages?: string[]
-  totalPatients?: number
-  totalReviews?: number
-  nextAvailable?: string
-  workingHours?: {
-    [key: string]: { start: string; end: string }
-  }
-}
+
 
 interface Review {
   _id: string
@@ -43,32 +26,14 @@ interface Review {
 export default function DoctorProfilePage() {
   const params = useParams()
   const doctorId = params.id as string
-  const [doctor, setDoctor] = useState<Doctor | null>(null)
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [loading, setLoading] = useState(true)
+  const [reviews] = useState<Review[]>([])
+
+  const { data: doctor, isLoading } = usePatientDoctor(doctorId)
   const [showBooking, setShowBooking] = useState(false)
 
-  const fetchDoctorDetails = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/doctors/${doctorId}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      })
-      const data = await response.json()
-      setDoctor(data.doctor)
-      setReviews(data.reviews || [])
-    } catch (error) {
-      console.error("Error fetching doctor details:", error)
-    } finally {
-      setLoading(false)
-    }
-  }, [doctorId])(() => {
-    fetchDoctorDetails()
-  }, [doctorId, fetchDoctorDetails])
 
-  if (loading) {
+
+  if (isLoading) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <Sidebar userRole="patient" userName="Patient" />

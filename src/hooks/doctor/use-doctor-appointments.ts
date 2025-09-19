@@ -27,7 +27,7 @@ export const useUpdateDoctorAppointment = () => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) => 
       doctorAppointmentsApi.updateAppointment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctor-appointments'] })

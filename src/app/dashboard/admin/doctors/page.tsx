@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DoctorStatsCards } from "@/components/admin/doctors/doctor-stats"
@@ -42,13 +41,7 @@ interface Doctor {
   availability?: string[]
 }
 
-interface DoctorStats {
-  total: number
-  verified: number
-  pending: number
-  active: number
-  inactive: number
-}
+
 
 export default function AdminDoctorsPage() {
   const [searchTerm, setSearchTerm] = useState("")

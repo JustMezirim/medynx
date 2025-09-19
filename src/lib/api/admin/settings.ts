@@ -13,7 +13,7 @@ export const settingsApi = {
     return data
   },
 
-  updateSettings: async (settings: any) => {
+  updateSettings: async (settings: Record<string, unknown>) => {
     const { data } = await api.patch('/admin/settings', settings)
     return data
   },

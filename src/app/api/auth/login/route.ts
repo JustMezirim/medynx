@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
-import { verifyPassword, generateToken } from "@/lib/auth"
+import { verifyPassword, generateToken, generateRefreshToken } from "@/lib/auth"
 import { checkMaintenanceMode } from "@/lib/maintenance"
 
 export async function POST(request: NextRequest) {
@@ -48,18 +48,20 @@ export async function POST(request: NextRequest) {
       }, { status: 403 })
     }
 
-    // Generate JWT token
-    const token = generateToken({
+    // Generate access and refresh tokens
+    const tokenPayload = {
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
-    })
+    }
+    const token = generateToken(tokenPayload)
+    const refreshToken = generateRefreshToken(tokenPayload)
 
-    // Create response without token in body
+    // Create response without token in body (token only in cookie)
     const response = NextResponse.json({
       message: "Login successful",
       user: {
-        id: user._id,
+        userId: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -69,11 +71,16 @@ export async function POST(request: NextRequest) {
       success: true,
     })
 
-    // Set HTTP-only cookie using Set-Cookie header
+    // Set HTTP-only cookies for both tokens
     const isProduction = process.env.NODE_ENV === 'production'
+    const secureFlag = isProduction ? '; Secure' : ''
+    
     response.headers.set(
       "Set-Cookie",
-      `token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${isProduction ? '; Secure' : ''}`
+      [
+        `token=${token}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${60 * 60}${secureFlag}`, // 1 hour
+        `refreshToken=${refreshToken}; HttpOnly; Path=/; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}${secureFlag}` // 7 days
+      ].join(', ')
     )
 
     return response

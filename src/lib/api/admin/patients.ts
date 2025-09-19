@@ -38,7 +38,7 @@ export const patientsApi = {
     return data
   },
 
-  updatePatient: async (id: string, updateData: any) => {
+  updatePatient: async (id: string, updateData: Record<string, unknown>) => {
     const { data } = await api.patch(`/admin/patients/${id}`, updateData)
     return data
   },
@@ -48,7 +48,7 @@ export const patientsApi = {
     return data
   },
 
-  bulkUpdatePatients: async (ids: string[], updateData: any) => {
+  bulkUpdatePatients: async (ids: string[], updateData: Record<string, unknown>) => {
     await Promise.all(
       ids.map(id => api.patch(`/admin/patients/${id}`, updateData))
     )

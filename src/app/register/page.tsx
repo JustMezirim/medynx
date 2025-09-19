@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import AuthBackground from "@/components/auth/AuthBackground"
 import RegisterForm from "@/components/auth/RegisterForm"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
 
 export default function RegisterPage() {
-  const [isAllowed, setIsAllowed] = useState<boolean | null>(true) // Set to true by default for now
+  const [isAllowed] = useState<boolean | null>(true) // Set to true by default for now
   const router = useRouter()
 
   // Registration is allowed by default - can be controlled via environment variables or API

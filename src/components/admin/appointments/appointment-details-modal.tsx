@@ -1,9 +1,9 @@
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Calendar, User, Stethoscope, Video, Mail, FileText } from 'lucide-react'
+import { User, Video } from 'lucide-react'
 import { getStatusColor, getPaymentStatusColor } from '@/components/ui/status-colors'
 
 interface Appointment {

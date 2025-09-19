@@ -48,14 +48,7 @@ interface Appointment {
   prescription?: string
 }
 
-interface AppointmentStats {
-  total: number
-  scheduled: number
-  completed: number
-  cancelled: number
-  todayAppointments: number
-  totalRevenue: number
-}
+
 
 export default function AdminAppointmentsPage() {
   const [searchTerm, setSearchTerm] = useState("")

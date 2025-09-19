@@ -16,7 +16,7 @@ export const useSettingsHandlers = (settings: AppSettings, setSettings: (setting
   const handleSave = async () => {
     setSaving(true)
     try {
-      await updateSettings.mutateAsync(settings)
+      await updateSettings.mutateAsync(settings as unknown as Record<string, unknown>)
       showToast.success('Settings saved successfully')
     } catch (error) {
       console.error('Save error:', error)

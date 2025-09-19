@@ -9,60 +9,22 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { showToast } from "@/components/ui/toast-helper"
+
+import { useLogin } from "@/hooks/useAuth"
 import { ArrowLeft, Eye, EyeOff } from "lucide-react"
 
 const LoginForm = () => {
-  const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-
+  const loginMutation = useLogin()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
 
     const formData = new FormData(e.currentTarget)
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        showToast.success("Login successful!", "Welcome back to Medynx.")
-
-        let dashboardUrl
-        if (data.user.role === "admin") {
-          dashboardUrl = "/dashboard/admin"
-        } else if (data.user.role === "doctor") {
-          dashboardUrl = data.user.isActive ? "/dashboard/doctor" : "/dashboard/doctor/pending"
-        } else {
-          dashboardUrl = "/dashboard/patient"
-        }
-        
-        window.location.href = dashboardUrl
-      } else {
-        if (data.pending) {
-          showToast.info("Account Pending Approval", data.message)
-        } else if (data.deactivated) {
-          showToast.error("Account Deactivated", data.message)
-        } else {
-          showToast.error("Login failed", data.message || "Invalid credentials")
-        }
-      }
-    } catch {
-      showToast.error("Error", "Something went wrong. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
+    await loginMutation.mutateAsync({ email, password })
   }
 
   return (
@@ -181,9 +143,9 @@ const LoginForm = () => {
                   <Button 
                     type="submit" 
                     className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-lg font-semibold rounded-lg" 
-                    disabled={isLoading}
+                    disabled={loginMutation.isPending}
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {loginMutation.isPending ? "Signing in..." : "Sign in"}
                   </Button>
                 </motion.div>
               </form>

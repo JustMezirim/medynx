@@ -2,88 +2,34 @@
 
 import type React from "react"
 
-import { useState  } from "react"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { ProfileHeader } from "@/components/patient/profile/ProfileHeader"
 import { PersonalInfoForm } from "@/components/patient/profile/PersonalInfoForm"
 import { EmergencyContact } from "@/components/patient/profile/EmergencyContact"
 import { MedicalInformation } from "@/components/patient/profile/MedicalInformation"
-import { showToast } from "@/components/ui/toast-helper"
 import { Button } from "@/components/ui/button"
-
-interface PatientProfile {
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  dateOfBirth?: string
-  gender?: string
-  address?: string
-}
+import { usePatientProfile, useUpdatePatientProfile } from "@/hooks/patient/use-patient-profile"
+import type { UpdateProfileData } from "@/lib/api/patient/profile"
 
 export default function PatientProfilePage() {
-  const [profile, setProfile] = useState<PatientProfile | null>(null)
-  
-  const [saving, setSaving] = useState(false)
-
-  // Replaced with React Query
-
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch("/api/profile")
-      const data = await response.json()
-
-      if (response.ok) {
-        console.log('Profile data:', data.profile)
-        setProfile(data.profile)
-      } else {
-        showToast.error("Failed to load profile")
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error)
-      showToast.error("Failed to load profile")
-    } finally {
-      // Loading handled by React Query
-    }
-  }
+  const { data: profile, isLoading } = usePatientProfile()
+  const updateProfile = useUpdatePatientProfile()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setSaving(true)
 
     const formData = new FormData(e.currentTarget)
-    const updatedProfile = {
-      firstName: formData.get("firstName"),
-      lastName: formData.get("lastName"),
-      phone: formData.get("phone"),
-      dateOfBirth: formData.get("dateOfBirth"),
-      gender: formData.get("gender"),
-      address: formData.get("address"),
+    const updatedProfile: UpdateProfileData = {
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      phone: formData.get("phone") as string,
+      dateOfBirth: formData.get("dateOfBirth") as string,
+      gender: formData.get("gender") as string,
+      address: formData.get("address") as string,
     }
 
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedProfile),
-      })
-
-      if (response.ok) {
-        showToast.success("Profile updated successfully")
-        fetchProfile()
-      } else {
-        const data = await response.json()
-        showToast.error(data.message || "Failed to update profile")
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error)
-      showToast.error("Failed to update profile")
-    } finally {
-      setSaving(false)
-    }
+    await updateProfile.mutateAsync(updatedProfile)
   }
 
   if (isLoading) {
@@ -120,8 +66,8 @@ export default function PatientProfilePage() {
                     <EmergencyContact />
                   </div>
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={saving}>
-                      {saving ? (
+                    <Button type="submit" disabled={updateProfile.isPending}>
+                      {updateProfile.isPending ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                           Saving...
@@ -135,9 +81,9 @@ export default function PatientProfilePage() {
               ) : (
               <div className="text-center py-12">
                 <p className="text-gray-500">No profile data available. Please try refreshing the page.</p>
-                <button onClick={fetchProfile} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+                <Button onClick={() => window.location.reload()} className="mt-4">
                   Retry
-                </button>
+                </Button>
                 </div>
               )}
             </div>

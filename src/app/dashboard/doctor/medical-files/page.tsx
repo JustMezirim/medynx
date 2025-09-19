@@ -15,7 +15,7 @@ import { UploadButton } from "@uploadthing/react"
 import type { OurFileRouter } from "@/app/api/uploadthing/core"
 import { useMedicalFiles, useUploadMedicalFile } from "@/hooks/doctor/use-medical-files"
 import { getCategoryColor, formatFileSize } from "@/components/ui/status-colors"
-import type { MedicalFile } from "@/lib/api/doctor/medical-files"
+
 
 export default function DoctorMedicalFilesPage() {
   const [categoryFilter, setCategoryFilter] = useState("all")

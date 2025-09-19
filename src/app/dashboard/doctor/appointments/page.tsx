@@ -37,15 +37,7 @@ interface Appointment {
   zoomPassword?: string
 }
 
-interface Stats {
-  total: number
-  pending: number
-  confirmed: number
-  completed: number
-  cancelled: number
-  todayAppointments: number
-  revenue: number
-}
+
 
 export default function DoctorAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
@@ -72,7 +64,7 @@ export default function DoctorAppointmentsPage() {
 
 
 
-  const handleUpdateAppointment = async (appointmentId: string, updates: unknown) => {
+  const handleUpdateAppointment = async (appointmentId: string, updates: Record<string, unknown>) => {
     try {
       await updateAppointment.mutateAsync({ id: appointmentId, data: updates })
       showToast.success("Appointment updated successfully")
@@ -185,7 +177,7 @@ export default function DoctorAppointmentsPage() {
                     appointments={appointments}
                     getStatusColor={getAppointmentStatusColor}
                     canJoinMeeting={canJoinMeeting}
-                    onUpdateAppointment={handleUpdateAppointment}
+                    onUpdateAppointment={(id: string, updates: unknown) => handleUpdateAppointment(id, updates as Record<string, unknown>)}
                     onViewDetails={(appointment: Appointment) => {
                       setSelectedAppointment(appointment)
                       setShowDetailsModal(true)
@@ -200,7 +192,7 @@ export default function DoctorAppointmentsPage() {
                         getStatusColor={getAppointmentStatusColor}
                         getStatusIcon={getAppointmentStatusIconComponent}
                         canJoinMeeting={canJoinMeeting}
-                        onUpdateAppointment={handleUpdateAppointment}
+                        onUpdateAppointment={(id: string, updates: unknown) => handleUpdateAppointment(id, updates as Record<string, unknown>)}
                         onViewDetails={(appointment: Appointment) => {
                           setSelectedAppointment(appointment)
                           setShowDetailsModal(true)

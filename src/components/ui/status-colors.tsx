@@ -45,6 +45,16 @@ export const getDoctorStatusText = (isVerified: boolean, isActive: boolean) => {
 }
 
 // Appointment status colors for doctor view
+export const getNotificationStatusColor = (type: string) => {
+  switch (type) {
+    case 'appointment': return { bg: 'bg-blue-50', dot: 'bg-blue-500' }
+    case 'payment': return { bg: 'bg-green-50', dot: 'bg-green-500' }
+    case 'system': return { bg: 'bg-purple-50', dot: 'bg-purple-500' }
+    case 'reminder': return { bg: 'bg-yellow-50', dot: 'bg-yellow-500' }
+    default: return { bg: 'bg-gray-50', dot: 'bg-gray-500' }
+  }
+}
+
 export const getAppointmentStatusColor = (status: string) => {
   switch (status) {
     case "confirmed":
@@ -62,7 +72,7 @@ export const getAppointmentStatusColor = (status: string) => {
 
 // Appointment status icons
 export const getAppointmentStatusIcon = (status: string) => {
-  const iconProps = { className: "h-3 w-3" }
+  // const iconProps = { className: "h-3 w-3" }
   switch (status) {
     case "confirmed":
       return "check"
@@ -79,6 +89,7 @@ export const getAppointmentStatusIcon = (status: string) => {
 
 // Appointment status icon components
 export const getAppointmentStatusIconComponent = (status: string) => {
+  // const iconProps = { className: "h-3 w-3" }
   const iconProps = { className: "h-3 w-3" }
   switch (status) {
     case "confirmed":
@@ -95,7 +106,7 @@ export const getAppointmentStatusIconComponent = (status: string) => {
 }
 
 // Import required icons
-import { Check, X, Activity, Clock, FileText } from "lucide-react"
+import { Check, X, Activity, Clock, FileText, CheckCircle, XCircle, AlertCircle, RefreshCw, CreditCard } from "lucide-react"
 
 // Medical file category colors
 export const getCategoryColor = (category: string) => {
@@ -110,6 +121,57 @@ export const getCategoryColor = (category: string) => {
       return "bg-gray-100 text-gray-800"
     default:
       return "bg-gray-100 text-gray-800"
+  }
+}
+
+// Payment status icon components
+export const getPaymentStatusIcon = (status: string) => {
+  const iconProps = { className: "h-4 w-4" }
+  switch (status) {
+    case "paid":
+      return <CheckCircle {...iconProps} />
+    case "pending":
+      return <Clock {...iconProps} />
+    case "failed":
+      return <XCircle {...iconProps} />
+    case "refunded":
+      return <RefreshCw {...iconProps} />
+    default:
+      return <AlertCircle {...iconProps} />
+  }
+}
+
+// Payment method icon components
+export const getPaymentMethodIcon = (method: string) => {
+  const iconProps = { className: "h-4 w-4" }
+  switch (method.toLowerCase()) {
+    case "card":
+    case "credit_card":
+    case "debit_card":
+      return <CreditCard {...iconProps} />
+    default:
+      return <span className="text-sm font-bold">₦</span>
+  }
+}
+
+// Role color utility
+export const getRoleColor = (role: string) => {
+  switch (role) {
+    case "admin": return "bg-red-100 text-red-800"
+    case "doctor": return "bg-blue-100 text-blue-800"
+    case "patient": return "bg-green-100 text-green-800"
+    default: return "bg-gray-100 text-gray-800"
+  }
+}
+
+// Medical file category color utility
+export const getMedicalFileCategoryColor = (category: string) => {
+  switch (category) {
+    case "report": return "bg-blue-100 text-blue-800"
+    case "prescription": return "bg-green-100 text-green-800"
+    case "image": return "bg-purple-100 text-purple-800"
+    case "document": return "bg-gray-100 text-gray-800"
+    default: return "bg-gray-100 text-gray-800"
   }
 }
 

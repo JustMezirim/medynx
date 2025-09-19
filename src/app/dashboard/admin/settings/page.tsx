@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
@@ -14,19 +14,14 @@ import { Save } from "lucide-react"
 import { showToast } from "@/components/ui/toast-helper"
 import { useSettings } from '@/hooks/admin/use-settings'
 import { useSettingsHandlers } from '@/hooks/admin/use-settings-handlers'
+import { useAdminProfile, useUpdateAdminProfile, useSpecializations, useAddSpecialization, useAddAdmin } from '@/hooks/admin/use-admin-settings'
+import type { NewSpecialization as SpecializationData } from '@/lib/api/admin/admin-settings'
 
 interface AppSettings {
   siteName: string
   contactEmail: string
   allowRegistration: boolean
   maintenanceMode: boolean
-}
-
-interface NewAdmin {
-  firstName: string
-  lastName: string
-  email: string
-  permissions: string[]
 }
 
 interface CurrentProfile {
@@ -38,9 +33,11 @@ interface CurrentProfile {
   confirmPassword: string
 }
 
-interface NewSpecialization {
-  name: string
-  description: string
+interface NewAdminForm {
+  firstName: string
+  lastName: string
+  email: string
+  permissions: string[]
 }
 
 const ADMIN_PERMISSIONS = [
@@ -57,95 +54,45 @@ const ADMIN_PERMISSIONS = [
 ]
 
 export default function AdminSettingsPage() {
+  useSettings()
   const [settings, setSettings] = useState<AppSettings>({
     siteName: 'Medynx',
     contactEmail: "admin@Medynx.com",
     allowRegistration: true,
     maintenanceMode: false,
   })
-
-  const { data: settingsData } = useSettings()
   const { handleSave, handleChange, saving } = useSettingsHandlers(settings, setSettings)
 
-  useEffect(() => {
-    if (settingsData?.settings) {
-      const dbSettings = settingsData.settings
-      setSettings({
-        siteName: dbSettings.siteName || 'Medynx',
-        contactEmail: dbSettings.contactEmail || "admin@Medynx.com",
-        allowRegistration: Boolean(dbSettings.allowRegistration),
-        maintenanceMode: Boolean(dbSettings.maintenanceMode)
-      })
-    }
-  }, [settingsData])
-
-  const [newAdmin, setNewAdmin] = useState<NewAdmin>({
+  const [newAdmin, setNewAdmin] = useState<NewAdminForm>({
     firstName: "",
     lastName: "",
     email: "",
     permissions: []
   })
+  const { data: profileData } = useAdminProfile()
   const [profile, setProfile] = useState<CurrentProfile>({
-    firstName: "Admin",
-    lastName: "User",
-    email: "admin@Medynx.com",
+    firstName: profileData?.firstName || "Admin",
+    lastName: profileData?.lastName || "User",
+    email: profileData?.email || "admin@Medynx.com",
     currentPassword: "",
     newPassword: "",
     confirmPassword: ""
   })
-
-  useEffect(() => {
-    fetchCurrentProfile()
-  }, [])
-
-  const fetchCurrentProfile = async () => {
-    try {
-      const response = await fetch('/api/profile')
-      if (response.ok) {
-        const data = await response.json()
-        const user = data.user || data.profile || data
-        setProfile(prev => ({
-          ...prev,
-          firstName: user.firstName || 'Admin',
-          lastName: user.lastName || 'User',
-          email: user.email || 'admin@Medynx.com'
-        }))
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error)
-    }
-  }
   const [showAddAdmin, setShowAddAdmin] = useState(false)
-  const [addingAdmin, setAddingAdmin] = useState(false)
-  const [updatingProfile, setUpdatingProfile] = useState(false)
+  const addAdminMutation = useAddAdmin()
+  const updateProfileMutation = useUpdateAdminProfile()
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false
   })
-  const [specializations, setSpecializations] = useState([])
+  const { data: specializations = [] } = useSpecializations()
   const [showAddSpecialization, setShowAddSpecialization] = useState(false)
-  const [newSpecialization, setNewSpecialization] = useState<NewSpecialization>({
+  const [newSpecialization, setNewSpecialization] = useState<SpecializationData>({
     name: "",
     description: ""
   })
-  const [addingSpecialization, setAddingSpecialization] = useState(false)
-
-  useEffect(() => {
-    fetchSpecializations()
-  }, [])
-
-  const fetchSpecializations = async () => {
-    try {
-      const response = await fetch('/api/admin/specializations')
-      if (response.ok) {
-        const data = await response.json()
-        setSpecializations(data.specializations || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch specializations:', error)
-    }
-  }
+  const addSpecializationMutation = useAddSpecialization()
 
   const handleAddAdmin = async () => {
     if (!newAdmin.firstName || !newAdmin.lastName || !newAdmin.email || newAdmin.permissions.length === 0) {
@@ -153,29 +100,16 @@ export default function AdminSettingsPage() {
       return
     }
 
-    setAddingAdmin(true)
     try {
-      const response = await fetch('/api/admin/create-admin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newAdmin,
-          password: newAdmin.firstName.toLowerCase() + '12345',
-          role: 'admin'
-        })
+      await addAdminMutation.mutateAsync({
+        ...newAdmin,
+        password: newAdmin.firstName.toLowerCase() + '12345',
+        role: 'admin'
       })
-      
-      if (response.ok) {
-        showToast.success(`Admin added successfully`)
-        setNewAdmin({ firstName: '', lastName: "", email: "", permissions: [] })
-        setShowAddAdmin(false)
-      } else {
-        showToast.error("Failed to add admin")
-      }
+      setNewAdmin({ firstName: '', lastName: "", email: "", permissions: [] })
+      setShowAddAdmin(false)
     } catch {
-      showToast.error("Failed to add admin")
-    } finally {
-      setAddingAdmin(false)
+      // Error handled by mutation
     }
   }
 
@@ -185,27 +119,11 @@ export default function AdminSettingsPage() {
       return
     }
 
-    setUpdatingProfile(true)
     try {
-      const response = await fetch('/api/admin/profile', {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(profile)
-      })
-      
-      if (response.ok) {
-        showToast.success('Profile updated successfully')
-        setProfile(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }))
-      } else {
-        showToast.error("Failed to update profile")
-      }
+      await updateProfileMutation.mutateAsync(profile)
+      setProfile(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }))
     } catch {
-      showToast.error("Failed to update profile")
-    } finally {
-      setUpdatingProfile(false)
+      // Error handled by mutation
     }
   }
 
@@ -224,26 +142,12 @@ export default function AdminSettingsPage() {
       return
     }
 
-    setAddingSpecialization(true)
     try {
-      const response = await fetch('/api/admin/specializations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSpecialization)
-      })
-      
-      if (response.ok) {
-        showToast.success('Specialization added successfully')
-        setNewSpecialization({ name: "", description: "" })
-        setShowAddSpecialization(false)
-        fetchSpecializations() // Refresh the list
-      } else {
-        showToast.error("Failed to add specialization")
-      }
+      await addSpecializationMutation.mutateAsync(newSpecialization)
+      setNewSpecialization({ name: "", description: "" })
+      setShowAddSpecialization(false)
     } catch {
-      showToast.error("Failed to add specialization")
-    } finally {
-      setAddingSpecialization(false)
+      // Error handled by mutation
     }
   }
 
@@ -260,7 +164,7 @@ export default function AdminSettingsPage() {
               setProfile={setProfile}
               showPasswords={showPasswords}
               setShowPasswords={setShowPasswords}
-              updatingProfile={updatingProfile}
+              updatingProfile={updateProfileMutation.isPending}
               onUpdateProfile={handleUpdateProfile}
             />
 
@@ -302,7 +206,7 @@ export default function AdminSettingsPage() {
         onOpenChange={setShowAddAdmin}
         newAdmin={newAdmin}
         setNewAdmin={setNewAdmin}
-        addingAdmin={addingAdmin}
+        addingAdmin={addAdminMutation.isPending}
         onAddAdmin={handleAddAdmin}
         togglePermission={togglePermission}
         permissions={ADMIN_PERMISSIONS}
@@ -313,7 +217,7 @@ export default function AdminSettingsPage() {
         onOpenChange={setShowAddSpecialization}
         newSpecialization={newSpecialization}
         setNewSpecialization={setNewSpecialization}
-        addingSpecialization={addingSpecialization}
+        addingSpecialization={addSpecializationMutation.isPending}
         onAddSpecialization={handleAddSpecialization}
       />
     </div>

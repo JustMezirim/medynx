@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { showToast } from "@/components/ui/toast-helper"
+import { useSpecializations } from "@/hooks/useAuth"
+import { useUpdateDoctor } from "@/hooks/admin/use-admin-users"
+import type { UpdateDoctorData } from "@/lib/api/admin/users"
 
 interface Doctor {
   _id: string
@@ -28,8 +30,8 @@ interface EditDoctorFormProps {
 }
 
 export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [specializations, setSpecializations] = useState<{name: string}[]>([])
+  const { data: specializations = [] } = useSpecializations()
+  const updateDoctor = useUpdateDoctor()
   const [formData, setFormData] = useState({
     firstName: doctor.firstName,
     lastName: doctor.lastName,
@@ -42,48 +44,22 @@ export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormPr
     bio: doctor.bio || ""
   })
 
-  // Fetch replaced with React Query
 
-  const fetchSpecializations = async () => {
-    try {
-      const response = await fetch("/api/specializations")
-      if (response.ok) {
-        const data = await response.json()
-        setSpecializations(data.specializations || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch specializations:', error)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+
+    const updateData: UpdateDoctorData = {
+      ...formData,
+      experience: parseInt(formData.experience),
+      consultationFee: parseInt(formData.consultationFee)
+    }
 
     try {
-      const response = await fetch(`/api/admin/doctors/${doctor._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          experience: parseInt(formData.experience),
-          consultationFee: parseInt(formData.consultationFee)
-        }),
-      })
-
-      if (response.ok) {
-        showToast.success("Doctor updated successfully")
-        onSuccess()
-      } else {
-        const error = await response.json()
-        showToast.error("Update failed", error.message)
-      }
+      await updateDoctor.mutateAsync({ id: doctor._id, data: updateData })
+      onSuccess()
     } catch {
-      showToast.error("Error", "Something went wrong")
-    } finally {
-      setIsLoading(false)
+      // Error handling is done in the mutation
     }
   }
 
@@ -202,8 +178,8 @@ export function EditDoctorForm({ doctor, onSuccess, onCancel }: EditDoctorFormPr
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update Doctor"}
+        <Button type="submit" disabled={updateDoctor.isPending}>
+          {updateDoctor.isPending ? "Updating..." : "Update Doctor"}
         </Button>
       </div>
     </form>

@@ -14,7 +14,7 @@ interface Appointment {
   date: string
   timeSlot: string
   status: string
-  type: string
+  type?: string
   symptoms?: string
   amount: number
   zoomJoinUrl?: string

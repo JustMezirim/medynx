@@ -15,20 +15,7 @@ import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { useDashboardStats, useRecentActivity, useSystemStatus, useChartData } from '@/hooks/admin/use-dashboard'
 
-interface DashboardStats {
-  totalPatients: number
-  totalDoctors: number
-  totalAdmins?: number
-  totalAppointments: number
-  todayAppointments: number
-  totalRevenue?: number
-  pendingApprovals?: number
-  activeUsers?: number
-  completedAppointments?: number
-  patientsGrowth?: number
-  doctorsGrowth?: number
-  appointmentsGrowth?: number
-}
+
 
 interface RecentAppointment {
   _id: string

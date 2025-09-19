@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
@@ -11,14 +11,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { showToast } from "@/components/ui/toast-helper"
+
+import { useRegister, useSpecializations } from "@/hooks/useAuth"
 import { ArrowLeft, ArrowRight, Eye, EyeOff, User, Shield, FileText } from "lucide-react"
 
 const RegisterForm = () => {
   const [currentStep, setCurrentStep] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [specializations, setSpecializations] = useState<{name: string, description: string}[]>([])
+  const registerMutation = useRegister()
+  const { data: specializations = [] } = useSpecializations()
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -40,21 +41,7 @@ const RegisterForm = () => {
 
   const totalSteps = 3
 
-  useEffect(() => {
-    fetchSpecializations()
-  }, [])
 
-  const fetchSpecializations = async () => {
-    try {
-      const response = await fetch("/api/specializations")
-      if (response.ok) {
-        const data = await response.json()
-        setSpecializations(data.specializations || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch specializations:', error)
-    }
-  }
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -92,29 +79,11 @@ const RegisterForm = () => {
   }
 
   const handleSubmit = async () => {
-    setIsLoading(true)
-
     try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
-
-      if (response.ok) {
-        showToast.success("Registration successful!", "Please login with your credentials.")
-        router.push("/login")
-      } else {
-        showToast.error("Registration failed", result.message || "Something went wrong")
-      }
+      await registerMutation.mutateAsync(formData)
+      router.push("/login")
     } catch {
-      showToast.error("Error", "Something went wrong. Please try again.")
-    } finally {
-      setIsLoading(false)
+      // Error handling is done in the mutation
     }
   }
 
@@ -447,10 +416,10 @@ const RegisterForm = () => {
                     <Button
                       type="button"
                       onClick={handleSubmit}
-                      disabled={!validateStep(currentStep) || isLoading}
+                      disabled={!validateStep(currentStep) || registerMutation.isPending}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
-                      {isLoading ? "Creating account..." : "Create account"}
+                      {registerMutation.isPending ? "Creating account..." : "Create account"}
                     </Button>
                   )}
                 </div>

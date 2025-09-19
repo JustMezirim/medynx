@@ -7,7 +7,7 @@ export async function GET() {
       database: "connected",
       maintenance: "none"
     })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

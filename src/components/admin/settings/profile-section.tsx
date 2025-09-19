@@ -21,7 +21,7 @@ interface ProfileSectionProps {
     new: boolean
     confirm: boolean
   }
-  setShowPasswords: (passwords: any) => void
+  setShowPasswords: (passwords: { current: boolean; new: boolean; confirm: boolean } | ((prev: { current: boolean; new: boolean; confirm: boolean }) => { current: boolean; new: boolean; confirm: boolean })) => void
   updatingProfile: boolean
   onUpdateProfile: () => void
 }

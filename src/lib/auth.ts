@@ -11,6 +11,7 @@ export interface JWTPayload {
   userId: string
   email: string
   role: string
+  type?: string
   iat?: number
   exp?: number
 }
@@ -24,7 +25,11 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export function generateToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
-  return jwt.sign(payload, JWT_SECRET!, { expiresIn: "7d" })
+  return jwt.sign(payload, JWT_SECRET!, { expiresIn: "1h" })
+}
+
+export function generateRefreshToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
+  return jwt.sign({ ...payload, type: 'refresh' }, JWT_SECRET!, { expiresIn: "7d" })
 }
 
 export async function verifyToken(token: string): Promise<JWTPayload> {

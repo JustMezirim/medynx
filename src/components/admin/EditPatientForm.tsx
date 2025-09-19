@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { showToast } from "@/components/ui/toast-helper"
+import { useUpdatePatient } from "@/hooks/admin/use-admin-users"
+import type { UpdatePatientData } from "@/lib/api/admin/users"
 
 interface Patient {
   _id: string
@@ -27,7 +28,7 @@ interface EditPatientFormProps {
 }
 
 export function EditPatientForm({ patient, onSuccess, onCancel }: EditPatientFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const updatePatient = useUpdatePatient()
   const [formData, setFormData] = useState({
     firstName: patient.firstName,
     lastName: patient.lastName,
@@ -41,28 +42,14 @@ export function EditPatientForm({ patient, onSuccess, onCancel }: EditPatientFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+
+    const updateData: UpdatePatientData = formData
 
     try {
-      const response = await fetch(`/api/admin/patients/${patient._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      if (response.ok) {
-        showToast.success("Patient updated successfully")
-        onSuccess()
-      } else {
-        const error = await response.json()
-        showToast.error("Update failed", error.message)
-      }
+      await updatePatient.mutateAsync({ id: patient._id, data: updateData })
+      onSuccess()
     } catch {
-      showToast.error("Error", "Something went wrong")
-    } finally {
-      setIsLoading(false)
+      // Error handling is done in the mutation
     }
   }
 
@@ -165,8 +152,8 @@ export function EditPatientForm({ patient, onSuccess, onCancel }: EditPatientFor
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update Patient"}
+        <Button type="submit" disabled={updatePatient.isPending}>
+          {updatePatient.isPending ? "Updating..." : "Update Patient"}
         </Button>
       </div>
     </form>

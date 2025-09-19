@@ -12,9 +12,8 @@ import { LoadingSpinner } from "@/components/admin"
 import { PaymentDetailsModal } from "@/components/admin/payments/payment-details-modal"
 import { RefundDialog } from "@/components/admin/payments/refund-dialog"
 import { Pagination } from "@/components/admin/payments/pagination"
-import { RefreshCw, CreditCard, AlertCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { showToast } from '@/components/ui/toast-helper'
-import { getPaymentStatusColor } from '@/components/ui/status-colors'
+import { getPaymentStatusColor, getPaymentStatusIcon, getPaymentMethodIcon } from '@/components/ui/status-colors'
 import { usePayments, usePaymentStats, useProcessRefund } from '@/hooks/admin/use-payments'
 import { paymentsApi } from '@/lib/api/admin/payments'
 
@@ -43,13 +42,7 @@ interface Payment {
   refundAmount?: number
 }
 
-interface PaymentStats {
-  totalRevenue: number
-  totalTransactions: number
-  successfulPayments: number
-  refundedAmount: number
-  pendingPayments: number
-}
+
 
 export default function AdminPaymentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -72,8 +65,8 @@ export default function AdminPaymentsPage() {
   const { data: stats } = usePaymentStats()
   const processRefund = useProcessRefund()
 
-  const payments = (paymentsData as any)?.payments || []
-  const totalPages = (paymentsData as any)?.pagination?.pages || 1
+  const payments = paymentsData?.payments || []
+  const totalPages = paymentsData?.pagination?.pages || 1
 
   const handleRefund = async (paymentId: string) => {
     setRefundingPayment(paymentId)
@@ -107,33 +100,9 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  const getStatusColor = getPaymentStatusColor
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle className="h-4 w-4" />
-      case "pending":
-        return <Clock className="h-4 w-4" />
-      case "failed":
-        return <XCircle className="h-4 w-4" />
-      case "refunded":
-        return <RefreshCw className="h-4 w-4" />
-      default:
-        return <AlertCircle className="h-4 w-4" />
-    }
-  }
 
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method.toLowerCase()) {
-      case "card":
-      case "credit_card":
-      case "debit_card":
-        return <CreditCard className="h-4 w-4" />
-      default:
-        return <span className="text-sm font-bold">₦</span>
-    }
-  }
+
 
   if (isLoading && payments.length === 0) {
     return <LoadingSpinner />
@@ -172,8 +141,8 @@ export default function AdminPaymentsPage() {
                   setShowRefundDialog(true)
                 }}
                 refundingPayment={refundingPayment}
-                getStatusColor={getStatusColor}
-                getStatusIcon={getStatusIcon}
+                getStatusColor={getPaymentStatusColor}
+                getStatusIcon={getPaymentStatusIcon}
                 getPaymentMethodIcon={getPaymentMethodIcon}
               />
 
@@ -209,8 +178,8 @@ export default function AdminPaymentsPage() {
           setShowPaymentModal(false)
           setShowRefundDialog(true)
         }}
-        getStatusColor={getStatusColor}
-        getStatusIcon={getStatusIcon}
+        getStatusColor={getPaymentStatusColor}
+        getStatusIcon={getPaymentStatusIcon}
         getPaymentMethodIcon={getPaymentMethodIcon}
       />
 
