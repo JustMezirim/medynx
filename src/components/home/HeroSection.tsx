@@ -136,6 +136,7 @@ const HeroSection = () => {
               whileHover={{ scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/doc-home.jpg"
                 alt="Healthcare professional with modern technology"

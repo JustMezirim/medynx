@@ -2,59 +2,40 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DoctorSearchFilters, DoctorCard } from "@/components/patient"
 import { Search } from "lucide-react"
-
-interface Doctor {
-  _id: string
-  firstName: string
-  lastName: string
-  specialization: string
-  experience: number
-  rating: number
-  consultationFee: number
-  bio: string
-  isVerified: boolean
-  totalPatients?: number
-  nextAvailable?: string
-  languages?: string[]
-  education?: string
-  workingHours?: {
-    [key: string]: { start: string; end: string }
-  }
-}
+import { usePatientDoctors } from '@/hooks/patient/use-patient-doctors'
+import type { DoctorFilters } from "@/lib/api/patient/doctors"
 
 export default function FindDoctorsPage() {
-  const [doctors, setDoctors] = useState<Doctor[]>([])
-  const [loading, setLoading] = useState(true)
+  
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedSpecialization, setSelectedSpecialization] = useState("all")
   const [sortBy, setSortBy] = useState("rating")
   const [priceRange, setPriceRange] = useState("all")
   const [availabilityFilter, setAvailabilityFilter] = useState("all")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
   const [favorites, setFavorites] = useState<string[]>([])
 
-
-
-  useEffect(() => {
-    fetchDoctors()
-    loadFavorites()
-  }, [searchTerm, selectedSpecialization, sortBy, priceRange, availabilityFilter, currentPage])
-
-  const loadFavorites = () => {
-    const saved = localStorage.getItem('favoriteDoctors')
-    if (saved) {
-      setFavorites(JSON.parse(saved))
-    }
+  const filters: DoctorFilters = {
+    ...(selectedSpecialization !== "all" && { specialization: selectedSpecialization }),
+    ...(searchTerm && { search: searchTerm }),
   }
+
+  const { data: doctors = [], isLoading } = usePatientDoctors(filters)
+
+  // const loadFavorites = () => {
+  //   const saved = localStorage.getItem('favoriteDoctors')
+  //   if (saved) {
+  //     setFavorites(JSON.parse(saved))
+  //   }
+  // }
 
   const toggleFavorite = (doctorId: string) => {
     const newFavorites = favorites.includes(doctorId)
@@ -65,35 +46,8 @@ export default function FindDoctorsPage() {
     localStorage.setItem('favoriteDoctors', JSON.stringify(newFavorites))
   }
 
-  const fetchDoctors = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: '12',
-        ...(selectedSpecialization !== "all" && { specialization: selectedSpecialization }),
-        ...(searchTerm && { search: searchTerm }),
-        ...(sortBy && { sortBy }),
-        ...(priceRange !== "all" && { priceRange }),
-        ...(availabilityFilter !== "all" && { availability: availabilityFilter }),
-      })
-
-      const response = await fetch(`/api/doctors?${params}`)
-      const data = await response.json()
-
-      setDoctors(data.doctors || [])
-      setTotalPages(data.pagination?.pages || 1)
-    } catch (error) {
-      console.error("Error fetching doctors:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setCurrentPage(1)
-    fetchDoctors()
   }
 
   return (
@@ -102,8 +56,8 @@ export default function FindDoctorsPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader
-          title="Find Doctors"
-          subtitle="Browse and book appointments with qualified healthcare professionals"
+          // title="Find Doctors"
+          // subtitle="Browse and book appointments with qualified healthcare professionals"
         />
 
         <main className="flex-1 overflow-y-auto p-6">
@@ -123,7 +77,7 @@ export default function FindDoctorsPage() {
             onSubmit={handleSearch}
           />
 
-          {!loading && doctors.length > 0 && (
+          {!isLoading && doctors.length > 0 && (
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">
                 Found {doctors.length} doctors
@@ -132,7 +86,7 @@ export default function FindDoctorsPage() {
           )}
 
           {/* Results */}
-          {loading ? (
+          {isLoading ? (
             <div className={`grid gap-6 ${viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"}`}>
               {[...Array(6)].map((_, i) => (
                 <Card key={i} className="animate-pulse border-0 shadow-lg">
@@ -166,30 +120,7 @@ export default function FindDoctorsPage() {
                 ))}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center space-x-2 mt-8">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
 
-                  <span className="text-sm text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
             </>
           ) : (
             <Card>
@@ -201,7 +132,6 @@ export default function FindDoctorsPage() {
                   onClick={() => {
                     setSearchTerm("")
                     setSelectedSpecialization("all")
-                    setCurrentPage(1)
                   }}
                 >
                   Clear Filters

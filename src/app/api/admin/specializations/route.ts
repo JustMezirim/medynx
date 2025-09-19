@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
 
     const specializations = await Specialization.find().sort({ createdAt: -1 })
     return NextResponse.json({ specializations })
-  } catch (error) {
-    console.error("Error fetching specializations:", error)
+  } catch {
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -62,8 +61,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ specialization }, { status: 201 })
   } catch (error) {
     console.error("Error creating specialization:", error)
-    if ((error as any).code === 11000) {
-      return NextResponse.json({ message: "Specialization already exists" }, { status: 400 })
+    if ((error as { code?: number }).code === 11000) {
+      return NextResponse.json({ message: "A specialization with this name already exists" }, { status: 409 })
     }
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }

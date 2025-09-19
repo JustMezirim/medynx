@@ -65,7 +65,6 @@ export function AppointmentFilters({
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="video">Video Call</SelectItem>
-            <SelectItem value="in-person">In Person</SelectItem>
           </SelectContent>
         </Select>
         

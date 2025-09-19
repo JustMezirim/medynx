@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import connectDB from "@/lib/db"
-import Notification from "@/lib/models/Notification"
 import { verifyToken } from "@/lib/auth"
+// import { getNotifications, markAsRead } from "@/lib/notifications"
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -11,15 +10,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     const decoded = await verifyToken(token)
+    const { default: connectDB } = await import('@/lib/db')
+    const { default: Notification } = await import('@/lib/models/Notification')
+    
     await connectDB()
-
     await Notification.updateMany(
       { recipient: decoded.userId, isRead: false },
       { isRead: true }
     )
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to mark all as read" }, { status: 500 })
   }
 }

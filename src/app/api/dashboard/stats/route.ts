@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
-import User from "@/lib/models/User"
+// import User from "@/lib/models/User"
 import { verifyToken } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
@@ -39,22 +39,32 @@ export async function GET(request: NextRequest) {
     }
 
     if (payload.role === "doctor") {
-      const totalAppointments = await Appointment.countDocuments({ doctor: payload.userId })
+      // Only count appointments with successful payments
+      const totalAppointments = await Appointment.countDocuments({ 
+        doctor: payload.userId, 
+        paymentStatus: "paid" 
+      })
       const confirmedAppointments = await Appointment.countDocuments({ 
         doctor: payload.userId, 
-        status: "confirmed" 
+        status: "confirmed",
+        paymentStatus: "paid" 
       })
       const completedAppointments = await Appointment.countDocuments({ 
         doctor: payload.userId, 
-        status: "completed" 
+        status: "completed",
+        paymentStatus: "paid" 
       })
       const pendingAppointments = await Appointment.countDocuments({ 
         doctor: payload.userId, 
-        status: "pending" 
+        status: "pending",
+        paymentStatus: "paid" 
       })
 
-      // Get unique patients count
-      const uniquePatients = await Appointment.distinct("patient", { doctor: payload.userId })
+      // Get unique patients count from paid appointments only
+      const uniquePatients = await Appointment.distinct("patient", { 
+        doctor: payload.userId, 
+        paymentStatus: "paid" 
+      })
       const totalPatients = uniquePatients.length
 
       return NextResponse.json({

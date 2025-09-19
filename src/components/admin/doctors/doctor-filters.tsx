@@ -66,7 +66,7 @@ export function DoctorFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Specializations</SelectItem>
-            {specializations.map(spec => (
+            {specializations.filter(spec => spec).map(spec => (
               <SelectItem key={spec} value={spec}>
                 {spec.charAt(0).toUpperCase() + spec.slice(1)}
               </SelectItem>

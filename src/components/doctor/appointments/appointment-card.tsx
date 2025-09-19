@@ -142,19 +142,19 @@ export function AppointmentCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-6 w-6 p-0"
+              className="h-8 w-8 p-0"
               onClick={() => onViewDetails(appointment)}
             >
-              <Eye className="h-3 w-3" />
+              <Eye className="h-5 w-5" />
             </Button>
             {(appointment.status === "pending" || appointment.status === "confirmed") && (
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={() => onUpdateAppointment(appointment._id, { status: "cancelled" })}
               >
-                <X className="h-3 w-3" />
+                <X className="h-5 w-5" />
               </Button>
             )}
           </div>

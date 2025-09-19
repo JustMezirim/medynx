@@ -1,23 +1,61 @@
 // Simplified Sidebar Component
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
+import { useState, useEffect, useCallback } from "react"
+
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, FileText, Settings, LogOut, Heart, Stethoscope, User, BarChart3, Clock, Menu, X } from "lucide-react"
+import { Calendar, Users, FileText, Settings, LogOut, Stethoscope, User, BarChart3, Clock, Menu, X } from "lucide-react"
 import { showToast } from "@/components/ui/toast-helper"
+
 
 interface SidebarProps {
   userRole: "patient" | "doctor" | "admin"
   userName: string
 }
 
-export function Sidebar({ userRole, userName }: SidebarProps) {
+export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const checkAccountStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/me')
+      if (response.status === 403) {
+        showToast.error('Account Deactivated', 'Your account has been deactivated')
+        document.cookie = 'token=; Max-Age=0; path=/'
+        router.push('/login')
+        return false
+      }
+      if (response.ok) {
+        const data = await response.json()
+        if (!data.user.isActive) {
+          showToast.error('Account Deactivated', 'Your account has been deactivated')
+          document.cookie = 'token=; Max-Age=0; path=/'
+          router.push('/login')
+          return false
+        }
+      }
+      return true
+    } catch {
+      return true
+    }
+  }, [router])
+
+  const handleNavClick = async (e: React.MouseEvent, href: string) => {
+    e.preventDefault()
+    const isActive = await checkAccountStatus()
+    if (isActive) {
+      router.push(href)
+      setIsMobileMenuOpen(false)
+    }
+  }
+
+  useEffect(() => {
+    checkAccountStatus()
+  }, [pathname, checkAccountStatus])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -25,7 +63,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       await fetch("/api/auth/logout", { method: "POST" })
       showToast.success("Logged out successfully")
       router.push("/login")
-    } catch (error) {
+    } catch {
       showToast.error("Logout failed")
     } finally {
       setIsLoggingOut(false)
@@ -120,6 +158,11 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
             label: "Payments",
             icon: BarChart3,
           },
+          // {
+          //   href: `/dashboard/${userRole}/permissions`,
+          //   label: "User Permissions",
+          //   icon: Settings,
+          // },
           {
             href: `/dashboard/${userRole}/settings`,
             label: "Settings",
@@ -160,7 +203,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
         flex h-screen flex-col bg-slate-50/50 backdrop-blur-xl border-r border-slate-200/60 shadow-lg
       `}>
         {/* Logo */}
-        <div className="flex items-center space-x-3 p-6 bg-white/80 backdrop-blur-sm border-b border-slate-200/60">
+        <div className="flex items-center space-x-3 px-6 h-16 bg-white/80 backdrop-blur-sm border-b border-slate-200/60">
           {/* <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
             <Heart className="h-5 w-5 text-white" />
           </div> */}
@@ -177,15 +220,15 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
             const isActive = pathname === item.href
 
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                className={`group flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer ${
                   isActive
                     ? "bg-blue-500 text-white shadow-md"
                     : "text-slate-600 hover:bg-white/70 hover:text-slate-900 hover:shadow-sm"
                 }`}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={(e) => handleNavClick(e, item.href)}
               >
                 <div className={`flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
                   isActive 
@@ -195,7 +238,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                   <Icon className="h-4 w-4" />
                 </div>
                 <span className="font-medium text-sm">{item.label}</span>
-              </Link>
+              </a>
             )
           })}
         </nav>

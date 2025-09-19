@@ -1,11 +1,14 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect, useRef, useMemo } from "react"
+import { showToast } from "@/components/ui/toast-helper"
+import { formatDateForStorage } from "@/lib/date-utils"
+import { formatTime } from "@/lib/utils"
 import { AvailabilityStats } from "./availability-stats"
 import { CalendarView } from "./calendar-view"
 import { TimeSlotManager } from "./time-slot-manager"
 import { EmptyDateState } from "./empty-date-state"
+import { useDoctorAvailability, useTimeSlots, useSaveAvailability, useDeleteAvailability } from '@/hooks/doctor/use-doctor-availability'
 
 interface TimeSlot {
   id: string
@@ -19,18 +22,7 @@ interface DayAvailability {
   isFullyBooked?: boolean
 }
 
-const fetchTimeSlots = async (date: Date, startHour: number = 9, endHour: number = 17) => {
-  try {
-    const response = await fetch(`/api/time-slots?date=${date.toISOString()}&startHour=${startHour}&endHour=${endHour}`)
-    if (response.ok) {
-      const data = await response.json()
-      return data.slots
-    }
-  } catch (error) {
-    console.error("Error fetching time slots:", error)
-  }
-  return []
-}
+
 
 const presetSchedules = {
   "morning": { start: 9, end: 13, name: "Morning (9 AM - 1 PM)" },
@@ -42,14 +34,19 @@ const presetSchedules = {
 export default function DoctorAvailabilityCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [availability, setAvailability] = useState<Record<string, DayAvailability>>({})
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
-  const [loading, setLoading] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState<string>("")
   const [copyFromDate, setCopyFromDate] = useState<string>("")
   const [customTime, setCustomTime] = useState<string>("")
   const [showStats, setShowStats] = useState(false)
   const timeSlotsRef = useRef<HTMLDivElement>(null)
-  const { toast } = useToast()
+
+  const { data: availabilityData } = useDoctorAvailability()
+  const { data: timeSlotsData } = useTimeSlots(selectedDate)
+  const saveAvailability = useSaveAvailability()
+  const deleteAvailability = useDeleteAvailability()
+
+  const timeSlots = useMemo(() => timeSlotsData?.slots || [], [timeSlotsData])
+
 
   const getWeeklyStats = () => {
     const today = new Date()
@@ -60,86 +57,69 @@ export default function DoctorAvailabilityCalendar() {
       return date.toISOString().split('T')[0]
     })
     
-    const totalSlots = weekDates.reduce((acc, dateKey) => {
-      const dayAvailability = availability[dateKey]
+    const totalSlots = weekDates.reduce((acc, date) => {
+      const dayAvailability = availability[date]
       return acc + (dayAvailability?.slots.length || 0)
     }, 0)
     
-    const availableSlots = weekDates.reduce((acc, dateKey) => {
-      const dayAvailability = availability[dateKey]
+    const availableSlots = weekDates.reduce((acc, date) => {
+      const dayAvailability = availability[date]
       return acc + (dayAvailability?.slots.filter(slot => slot.isAvailable).length || 0)
     }, 0)
     
     return { totalSlots, availableSlots, weekDates: weekDates.length }
   }
 
-  // Fetch doctor's availability data
+  // Process availability data from React Query
   useEffect(() => {
-    const fetchAvailability = async () => {
-      try {
-        const response = await fetch('/api/availability/doctor')
-        if (response.ok) {
-          const data = await response.json()
-          const availabilityMap: Record<string, DayAvailability> = {}
-          
-          data.availabilities.forEach((avail: any) => {
-            const dateKey = new Date(avail.date).toISOString().split('T')[0]
-            availabilityMap[dateKey] = {
-              date: dateKey,
-              slots: avail.timeSlots.map((slot: any) => ({
-                id: `slot-${slot.time}`,
-                time: slot.time,
-                isAvailable: !slot.isBooked
-              }))
-            }
-          })
-          
-          setAvailability(availabilityMap)
-        }
-      } catch (error) {
-        console.error('Error fetching availability:', error)
-      }
-    }
-    
-    fetchAvailability()
-  }, [])
-
-  // Fetch time slots when date is selected
-  useEffect(() => {
-    const loadTimeSlots = async () => {
-      if (selectedDate) {
-        const slots = await fetchTimeSlots(selectedDate)
-        setTimeSlots(slots)
-        
-        // If no saved availability exists, initialize with API slots
-        const dateKey = selectedDate.toISOString().split('T')[0]
-        if (!availability[dateKey]) {
-          setAvailability(prev => ({
-            ...prev,
-            [dateKey]: {
-              date: dateKey,
-              slots: slots.map((slot: TimeSlot) => ({
-                ...slot,
-                isAvailable: false
-              }))
-            }
+    if (availabilityData?.availabilities) {
+      const availabilityMap: Record<string, DayAvailability> = {}
+      
+      availabilityData.availabilities.forEach((avail: { date: string; timeSlots: { time: string; isBooked: boolean }[] }) => {
+        // Use the date string directly without timezone conversion
+        const dateKey = avail.date.split('T')[0] // Handle both YYYY-MM-DD and ISO formats
+        availabilityMap[dateKey] = {
+          date: dateKey,
+          slots: avail.timeSlots.map((slot: { time: string; isBooked: boolean }) => ({
+            id: `slot-${slot.time}`,
+            time: slot.time,
+            isAvailable: !slot.isBooked
           }))
         }
-        
-        // Auto-scroll to time slots section
-        setTimeout(() => {
-          timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
-      }
+      })
+      
+      setAvailability(availabilityMap)
     }
-    
-    loadTimeSlots()
-  }, [selectedDate, availability])
+  }, [availabilityData])
+
+  // Initialize availability when time slots are loaded
+  useEffect(() => {
+    if (selectedDate && timeSlots.length > 0) {
+      const dateKey = formatDateForStorage(selectedDate)
+      if (!availability[dateKey]) {
+        setAvailability(prev => ({
+          ...prev,
+          [dateKey]: {
+            date: dateKey,
+            slots: timeSlots.map((slot: TimeSlot) => ({
+              ...slot,
+              isAvailable: false
+            }))
+          }
+        }))
+      }
+      
+      // Auto-scroll to time slots section
+      setTimeout(() => {
+        timeSlotsRef.current?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }, [selectedDate, timeSlots, availability])
 
   const getCurrentDateAvailability = (): TimeSlot[] => {
     if (!selectedDate) return timeSlots
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(selectedDate)
     const dayAvailability = availability[dateKey]
     
     if (dayAvailability) {
@@ -161,7 +141,7 @@ export default function DoctorAvailabilityCalendar() {
     const apiSlot = timeSlots.find((s: TimeSlot) => s.id === slotId)
     if (apiSlot && !apiSlot.isAvailable) return
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(selectedDate)
     const currentSlots = getCurrentDateAvailability()
     
     const updatedSlots = currentSlots.map((slot: TimeSlot) =>
@@ -180,7 +160,7 @@ export default function DoctorAvailabilityCalendar() {
   const handleSelectAll = () => {
     if (!selectedDate) return
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(selectedDate)
     const currentSlots = getCurrentDateAvailability()
     const allSelected = currentSlots.every((slot: TimeSlot) => slot.isAvailable)
     
@@ -198,18 +178,16 @@ export default function DoctorAvailabilityCalendar() {
     }))
   }
 
-  const handlePresetSchedule = async (preset: string) => {
+  const handlePresetSchedule = (preset: string) => {
     if (!selectedDate || !presetSchedules[preset as keyof typeof presetSchedules]) return
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
-    const presetConfig = presetSchedules[preset as keyof typeof presetSchedules]
-    
-    const slots = await fetchTimeSlots(selectedDate, presetConfig.start, presetConfig.end)
-    const updatedSlots = slots.map((slot: TimeSlot) => ({
+    const currentSlots = getCurrentDateAvailability()
+    const updatedSlots = currentSlots.map((slot: TimeSlot) => ({
       ...slot,
       isAvailable: slot.isAvailable
     }))
     
+    const dateKey = formatDateForStorage(selectedDate)
     setAvailability(prev => ({
       ...prev,
       [dateKey]: {
@@ -223,16 +201,8 @@ export default function DoctorAvailabilityCalendar() {
 
   const handleAddCustomTime = () => {
     if (customTime && selectedDate) {
-      const [hours, minutes] = customTime.split(':')
-      const time12 = new Date()
-      time12.setHours(parseInt(hours), parseInt(minutes))
-      const timeString = time12.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      })
+      const timeString = formatTime(customTime)
       
-      const dateKey = selectedDate.toISOString().split('T')[0]
       const currentSlots = getCurrentDateAvailability()
       const newSlot = {
         id: `slot-${timeString}`,
@@ -241,6 +211,7 @@ export default function DoctorAvailabilityCalendar() {
       }
       
       if (!currentSlots.find(s => s.time === timeString)) {
+        const dateKey = formatDateForStorage(selectedDate)
         setAvailability(prev => ({
           ...prev,
           [dateKey]: {
@@ -252,16 +223,9 @@ export default function DoctorAvailabilityCalendar() {
             })
           }
         }))
-        toast({
-          title: 'Time slot added',
-          description: `${timeString} has been added to your availability`
-        })
+        showToast.success(`${timeString} has been added to your availability`)
       } else {
-        toast({
-          title: "Time slot already exists",
-          description: `${timeString} is already in your availability`,
-          variant: "destructive"
-        })
+        showToast.error(`${timeString} is already in your availability`)
       }
       setCustomTime('')
     }
@@ -272,15 +236,11 @@ export default function DoctorAvailabilityCalendar() {
     
     const sourceDateAvailability = availability[copyFromDate]
     if (!sourceDateAvailability) {
-      toast({
-        title: 'No availability found',
-        description: "No availability found for the selected date",
-        variant: "destructive"
-      })
+      showToast.error("No availability found for the selected date")
       return
     }
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(selectedDate)
     setAvailability(prev => ({
       ...prev,
       [dateKey]: {
@@ -290,72 +250,41 @@ export default function DoctorAvailabilityCalendar() {
     }))
     
     setCopyFromDate('')
-    toast({
-      title: "Availability copied",
-      description: "Availability has been successfully copied"
-    })
+    showToast.success("Availability has been successfully copied")
   }
 
   const handleSaveAvailability = async () => {
     if (!selectedDate) {
-      toast({
-        title: "No date selected",
-        description: "Please select a date first",
-        variant: "destructive"
-      })
+      showToast.error("Please select a date first")
       return
     }
     
-    setLoading(true)
     try {
-      const dateKey = selectedDate.toISOString().split('T')[0]
       const currentSlots = getCurrentDateAvailability()
       
-      const timeSlots = currentSlots.map((slot: TimeSlot) => ({
-        time: slot.time,
-        isBooked: !slot.isAvailable
-      }))
+      const timeSlots = currentSlots
+        .filter((slot: TimeSlot) => slot.isAvailable)
+        .map((slot: TimeSlot) => ({
+          time: slot.time,
+          isBooked: false
+        }))
       
-      const response = await fetch('/api/availability', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          date: dateKey,
-          timeSlots
-        })
+      await saveAvailability.mutateAsync({
+        date: formatDateForStorage(selectedDate),
+        timeSlots
       })
       
-      if (response.ok) {
-        toast({
-          title: 'Availability saved',
-          description: "Your availability has been updated successfully"
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Save failed",
-          description: error.message || "Failed to save availability",
-          variant: "destructive"
-        })
-      }
+      showToast.success("Your availability has been updated successfully")
     } catch (error) {
       console.error('Error saving availability:', error)
-      toast({
-        title: 'Save failed',
-        description: "Failed to save availability",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
+      showToast.error("Failed to save availability")
     }
   }
 
   const handleClearDay = () => {
     if (!selectedDate) return
     
-    const dateKey = selectedDate.toISOString().split('T')[0]
+    const dateKey = formatDateForStorage(selectedDate)
     const clearedSlots = getCurrentDateAvailability().map((slot: TimeSlot) => ({
       ...slot,
       isAvailable: false
@@ -373,43 +302,22 @@ export default function DoctorAvailabilityCalendar() {
   const handleDeleteAvailability = async () => {
     if (!selectedDate) return
     
-    setLoading(true)
     try {
-      const dateKey = selectedDate.toISOString().split('T')[0]
+      const dateKey = formatDateForStorage(selectedDate)
       
-      const response = await fetch(`/api/availability?date=${dateKey}`, {
-        method: 'DELETE'
+      await deleteAvailability.mutateAsync(dateKey)
+      
+      // Remove from local state
+      setAvailability(prev => {
+        const newAvailability = { ...prev }
+        delete newAvailability[dateKey]
+        return newAvailability
       })
       
-      if (response.ok) {
-        // Remove from local state
-        setAvailability(prev => {
-          const newAvailability = { ...prev }
-          delete newAvailability[dateKey]
-          return newAvailability
-        })
-        
-        toast({
-          title: 'Availability deleted',
-          description: "Your availability for this date has been completely removed"
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Delete failed",
-          description: error.message || "Failed to delete availability",
-          variant: "destructive"
-        })
-      }
+      showToast.success("Your availability for this date has been completely removed")
     } catch (error) {
       console.error('Error deleting availability:', error)
-      toast({
-        title: 'Delete failed',
-        description: "Failed to delete availability",
-        variant: "destructive"
-      })
-    } finally {
-      setLoading(false)
+      showToast.error("Failed to delete availability")
     }
   }
 
@@ -459,7 +367,7 @@ export default function DoctorAvailabilityCalendar() {
           copyFromDate={copyFromDate}
           setCopyFromDate={setCopyFromDate}
           availableDates={availableDates}
-          loading={loading}
+          loading={saveAvailability.isPending || deleteAvailability.isPending}
           onSlotToggle={handleSlotToggle}
           onSelectAll={handleSelectAll}
           onClearDay={handleClearDay}

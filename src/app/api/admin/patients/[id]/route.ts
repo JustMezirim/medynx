@@ -4,7 +4,7 @@ import User from "@/lib/models/User"
 import Appointment from "@/lib/models/Appointment"
 import { verifyToken } from "@/lib/auth"
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -24,11 +24,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
+    const { id } = await params
     const updateData = await request.json()
     const { firstName, lastName, email, phone, dateOfBirth, gender, address, emergencyContact } = updateData
 
     const patient = await User.findByIdAndUpdate(
-      params.id,
+      id,
       {
         firstName,
         lastName,
@@ -53,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -65,7 +66,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -73,7 +74,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
 
     const patient = await User.findOneAndUpdate(
@@ -93,7 +94,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -105,7 +106,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -113,7 +114,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ message: "Forbidden" }, { status: 403 })
     }
 
-    const { id } = params
+    const { id } = await params
 
     // Check if patient has appointments
     const appointmentCount = await Appointment.countDocuments({ patient: id })

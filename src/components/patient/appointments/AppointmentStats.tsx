@@ -10,43 +10,46 @@ interface AppointmentStatsProps {
 export function AppointmentStats({ upcomingCount, completedCount, totalCount }: AppointmentStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50">
+      <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-800">Upcoming</p>
-              <p className="text-3xl font-bold text-blue-700">{upcomingCount}</p>
+              <p className="text-sm font-medium opacity-90">Upcoming</p>
+              <p className="text-3xl font-bold">{upcomingCount}</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-blue-600" />
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Calendar className="h-4 w-4" />
             </div>
           </div>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </CardContent>
       </Card>
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+      <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-green-800">Completed</p>
-              <p className="text-3xl font-bold text-green-700">{completedCount}</p>
+              <p className="text-sm font-medium opacity-90">Completed</p>
+              <p className="text-3xl font-bold">{completedCount}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <FileText className="h-6 w-6 text-green-600" />
+            <div className="p-2 bg-white/20 rounded-lg">
+              <FileText className="h-4 w-4" />
             </div>
           </div>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </CardContent>
       </Card>
-      <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50">
+      <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-purple-800">This Month</p>
-              <p className="text-3xl font-bold text-purple-700">{totalCount}</p>
+              <p className="text-sm font-medium opacity-90">This Month</p>
+              <p className="text-3xl font-bold">{totalCount}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <Clock className="h-6 w-6 text-purple-600" />
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Clock className="h-4 w-4" />
             </div>
           </div>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
         </CardContent>
       </Card>
     </div>

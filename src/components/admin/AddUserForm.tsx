@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DialogFooter } from "@/components/ui/dialog"
-import { showToast } from "@/components/ui/toast-helper"
+import { useSpecializations } from "@/hooks/useAuth"
+import { useCreateUser } from "@/hooks/admin/use-admin-users"
+import type { CreateUserData } from "@/lib/api/admin/users"
 
 interface AddUserFormProps {
   userType: "doctor" | "patient"
@@ -15,8 +17,8 @@ interface AddUserFormProps {
 }
 
 export function AddUserForm({ userType, onSuccess, onCancel }: AddUserFormProps) {
-  const [loading, setLoading] = useState(false)
-  const [specializations, setSpecializations] = useState<{name: string}[]>([])
+  const { data: specializations = [] } = useSpecializations()
+  const createUser = useCreateUser()
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,56 +33,35 @@ export function AddUserForm({ userType, onSuccess, onCancel }: AddUserFormProps)
     gender: "",
   })
 
-  useEffect(() => {
-    if (userType === "doctor") {
-      fetchSpecializations()
-    }
-  }, [userType])
 
-  const fetchSpecializations = async () => {
-    try {
-      const response = await fetch("/api/specializations")
-      if (response.ok) {
-        const data = await response.json()
-        setSpecializations(data.specializations || [])
-      }
-    } catch (error) {
-      console.error('Failed to fetch specializations:', error)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+
+    const payload: CreateUserData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password,
+      role: userType,
+      ...(userType === "doctor" && {
+        specialization: formData.specialization,
+        licenseNumber: formData.licenseNumber,
+        experience: parseInt(formData.experience) || 0,
+        consultationFee: parseFloat(formData.consultationFee) || 0,
+      }),
+      ...(userType === "patient" && {
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+      }),
+    }
 
     try {
-      const payload = {
-        ...formData,
-        role: userType,
-        ...(userType === "doctor" && {
-          experience: parseInt(formData.experience) || 0,
-          consultationFee: parseFloat(formData.consultationFee) || 0,
-        }),
-      }
-
-      const response = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-
-      if (response.ok) {
-        showToast.success(`${userType === "doctor" ? "Doctor" : "Patient"} created successfully`)
-        onSuccess()
-      } else {
-        const data = await response.json()
-        showToast.error(data.message || "Failed to create user")
-      }
-    } catch (error) {
-      console.error("Error creating user:", error)
-      showToast.error("Failed to create user")
-    } finally {
-      setLoading(false)
+      await createUser.mutateAsync(payload)
+      onSuccess()
+    } catch {
+      // Error handling is done in the mutation
     }
   }
 
@@ -148,7 +129,7 @@ export function AddUserForm({ userType, onSuccess, onCancel }: AddUserFormProps)
                 <SelectValue placeholder="Select specialization" />
               </SelectTrigger>
               <SelectContent>
-                {specializations.map(spec => (
+                {specializations.map((spec: { name: string }) => (
                   <SelectItem key={spec.name} value={spec.name}>
                     {spec.name}
                   </SelectItem>
@@ -215,7 +196,6 @@ export function AddUserForm({ userType, onSuccess, onCancel }: AddUserFormProps)
               <SelectContent>
                 <SelectItem value="male">Male</SelectItem>
                 <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -226,8 +206,8 @@ export function AddUserForm({ userType, onSuccess, onCancel }: AddUserFormProps)
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
-          {loading ? "Creating..." : `Create ${userType === "doctor" ? "Doctor" : "Patient"}`}
+        <Button type="submit" disabled={createUser.isPending}>
+          {createUser.isPending ? "Creating..." : `Create ${userType === "doctor" ? "Doctor" : "Patient"}`}
         </Button>
       </DialogFooter>
     </form>

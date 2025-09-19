@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { PatientsHeader } from "@/components/doctor/patients/patients-header"
@@ -12,70 +13,22 @@ import { Button } from "@/components/ui/button"
 import { Download, UserPlus } from "lucide-react"
 import { showToast } from "@/components/ui/toast-helper"
 import Link from "next/link"
-
-interface Patient {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone: string
-  dateOfBirth: string
-  gender: string
-  lastAppointment: string
-  appointmentsCount: number
-  lastStatus: string
-}
+import { useDoctorPatients } from "@/hooks/doctor/use-doctor-patients"
+import { getAppointmentStatusColor } from "@/components/ui/status-colors"
 
 export default function DoctorPatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const router = useRouter()
 
-  useEffect(() => {
-    fetchPatients()
-  }, [])
-
-  const fetchPatients = async () => {
-    try {
-      const response = await fetch("/api/doctor/patients")
-      const data = await response.json()
-
-      if (response.ok) {
-        setPatients(data.patients)
-      } else {
-        showToast.error(data.message || "Failed to load patients")
-      }
-    } catch (error) {
-      console.error("Error fetching patients:", error)
-      showToast.error("Failed to load patients")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-blue-100 text-blue-800"
-      case "completed":
-        return "bg-green-100 text-green-800"
-      case "cancelled":
-        return "bg-red-100 text-red-800"
-      case "pending":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+  const { data, isLoading } = useDoctorPatients()
+  const patients = data?.patients || []
 
   const handleViewPatient = (patientId: string) => {
-    // Navigate to patient details
-    window.location.href = `/dashboard/doctor/patients/${patientId}`
+    router.push(`/dashboard/doctor/patients/${patientId}`)
   }
 
   const handleViewMedicalFiles = (patientId: string) => {
-    // Navigate to medical files
-    window.location.href = `/dashboard/doctor/patients/${patientId}/files`
+    router.push(`/dashboard/doctor/patients/${patientId}/files`)
   }
 
   const handleExportPatients = () => {
@@ -89,7 +42,7 @@ export default function DoctorPatientsPage() {
       patient.phone.includes(searchTerm),
   )
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />
   }
 
@@ -99,8 +52,8 @@ export default function DoctorPatientsPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title="My Patients" 
-          subtitle="Manage your patient records and medical history"
+          // title="My Patients" 
+          // subtitle="Manage your patient records and medical history"
           actions={
             <>
               <Button 
@@ -126,7 +79,6 @@ export default function DoctorPatientsPage() {
           <div className="max-w-10xl mx-auto space-y-6">
             <PatientsHeader 
               patientCount={filteredPatients.length}
-              onExport={handleExportPatients}
             />
 
             <PatientsSearch 
@@ -142,7 +94,7 @@ export default function DoctorPatientsPage() {
                     patient={patient}
                     onViewPatient={handleViewPatient}
                     onViewMedicalFiles={handleViewMedicalFiles}
-                    getStatusColor={getStatusColor}
+                    getStatusColor={getAppointmentStatusColor}
                   />
                 ))}
               </div>

@@ -40,7 +40,7 @@ const presetSchedules = {
   "fullday": { start: 9, end: 17, name: "Full Day (9 AM - 5 PM)" }
 }
 
-export const TimeSlotManager = forwardRef<HTMLDivElement, TimeSlotManagerProps>(({
+export const TimeSlotManager = forwardRef<HTMLDivElement, TimeSlotManagerProps>(function TimeSlotManager({
   selectedDate,
   timeSlots,
   availableSlotCount,
@@ -60,7 +60,7 @@ export const TimeSlotManager = forwardRef<HTMLDivElement, TimeSlotManagerProps>(
   onCopyFromDate,
   onSaveAvailability,
   onDeleteAvailability
-}, ref) => {
+}, ref) {
   const formatSelectedDate = (date: Date) => {
     return date.toLocaleDateString('en-US', {
       weekday: 'long',

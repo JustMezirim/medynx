@@ -1,12 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { PaymentStatsCards } from "@/components/admin/payments/payment-stats"
@@ -16,8 +12,10 @@ import { LoadingSpinner } from "@/components/admin"
 import { PaymentDetailsModal } from "@/components/admin/payments/payment-details-modal"
 import { RefundDialog } from "@/components/admin/payments/refund-dialog"
 import { Pagination } from "@/components/admin/payments/pagination"
-import { Calendar, User, RefreshCw, CreditCard, AlertCircle, CheckCircle, XCircle, Clock, Mail, FileText } from 'lucide-react'
 import { showToast } from '@/components/ui/toast-helper'
+import { getPaymentStatusColor, getPaymentStatusIcon, getPaymentMethodIcon } from '@/components/ui/status-colors'
+import { usePayments, usePaymentStats, useProcessRefund } from '@/hooks/admin/use-payments'
+import { paymentsApi } from '@/lib/api/admin/payments'
 
 interface Payment {
   _id: string
@@ -44,76 +42,37 @@ interface Payment {
   refundAmount?: number
 }
 
-interface PaymentStats {
-  totalRevenue: number
-  totalTransactions: number
-  successfulPayments: number
-  refundedAmount: number
-  pendingPayments: number
-}
+
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [stats, setStats] = useState<PaymentStats>({
-    totalRevenue: 0,
-    totalTransactions: 0,
-    successfulPayments: 0,
-    refundedAmount: 0,
-    pendingPayments: 0,
-  })
-  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showRefundDialog, setShowRefundDialog] = useState(false)
   const [refundingPayment, setRefundingPayment] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchPayments()
-  }, [searchTerm, statusFilter, currentPage])
+  const { data: paymentsData, isLoading } = usePayments({
+    page: currentPage,
+    limit: 5,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    search: searchTerm,
+    status: statusFilter,
+  })
 
-  const fetchPayments = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "5",
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== "all" && { status: statusFilter }),
-      })
-      const response = await fetch(`/api/admin/payments?${params}`)
-      const data = await response.json()
-      if (response.ok) {
-        setPayments(data.payments || [])
-        setStats(data.stats || stats)
-        setTotalPages(data.pagination?.pages || 1)
-      } else {
-        showToast.error(data.message || "Failed to load payments")
-      }
-    } catch (error) {
-      console.error("Error fetching payments:", error)
-      showToast.error("Failed to load payments")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: stats } = usePaymentStats()
+  const processRefund = useProcessRefund()
+
+  const payments = paymentsData?.payments || []
+  const totalPages = paymentsData?.pagination?.pages || 1
 
   const handleRefund = async (paymentId: string) => {
     setRefundingPayment(paymentId)
     try {
-      const response = await fetch(`/api/admin/payments/${paymentId}/refund`, {
-        method: "POST",
-      })
-      if (response.ok) {
-        showToast.success("Refund processed successfully")
-        fetchPayments()
-      } else {
-        const data = await response.json()
-        showToast.error(data.message || "Failed to process refund")
-      }
+      await processRefund.mutateAsync({ id: paymentId, data: {} })
+      showToast.success("Refund processed successfully")
     } catch (error) {
       console.error("Error processing refund:", error)
       showToast.error("Failed to process refund")
@@ -125,69 +84,27 @@ export default function AdminPaymentsPage() {
 
   const exportPayments = async () => {
     try {
-      const response = await fetch("/api/admin/payments/export")
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.style.display = "none"
-        a.href = url
-        a.download = `payments-${new Date().toISOString().split("T")[0]}.csv`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        showToast.success("Payment data exported successfully")
-      } else {
-        showToast.error("Failed to export payment data")
-      }
+      const blob = await paymentsApi.exportPayments()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.style.display = "none"
+      a.href = url
+      a.download = `payments-${new Date().toISOString().split("T")[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      showToast.success("Payment data exported successfully")
     } catch (error) {
       console.error("Error exporting payments:", error)
       showToast.error("Failed to export payment data")
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "paid":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
-      case "pending":
-        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
-      case "failed":
-        return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800"
-      case "refunded":
-        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800"
-      default:
-        return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800"
-    }
-  }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle className="h-4 w-4" />
-      case "pending":
-        return <Clock className="h-4 w-4" />
-      case "failed":
-        return <XCircle className="h-4 w-4" />
-      case "refunded":
-        return <RefreshCw className="h-4 w-4" />
-      default:
-        return <AlertCircle className="h-4 w-4" />
-    }
-  }
 
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method.toLowerCase()) {
-      case "card":
-      case "credit_card":
-      case "debit_card":
-        return <CreditCard className="h-4 w-4" />
-      default:
-        return <span className="text-sm font-bold">₦</span>
-    }
-  }
 
-  if (loading && payments.length === 0) {
+
+  if (isLoading && payments.length === 0) {
     return <LoadingSpinner />
   }
 
@@ -196,8 +113,8 @@ export default function AdminPaymentsPage() {
       <Sidebar userRole="admin" userName="Admin User" />
       <div className="flex-1 flex flex-col overflow-hidden">
         <DashboardHeader 
-          title="Payment Management" 
-          subtitle="Monitor and manage all payment transactions" 
+          // title="Payment Management" 
+          // subtitle="Monitor and manage all payment transactions" 
         />
         
         <main className="flex-1 overflow-y-auto p-6 space-y-8">
@@ -224,8 +141,8 @@ export default function AdminPaymentsPage() {
                   setShowRefundDialog(true)
                 }}
                 refundingPayment={refundingPayment}
-                getStatusColor={getStatusColor}
-                getStatusIcon={getStatusIcon}
+                getStatusColor={getPaymentStatusColor}
+                getStatusIcon={getPaymentStatusIcon}
                 getPaymentMethodIcon={getPaymentMethodIcon}
               />
 
@@ -261,8 +178,8 @@ export default function AdminPaymentsPage() {
           setShowPaymentModal(false)
           setShowRefundDialog(true)
         }}
-        getStatusColor={getStatusColor}
-        getStatusIcon={getStatusIcon}
+        getStatusColor={getPaymentStatusColor}
+        getStatusIcon={getPaymentStatusIcon}
         getPaymentMethodIcon={getPaymentMethodIcon}
       />
 

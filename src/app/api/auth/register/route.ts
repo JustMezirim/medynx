@@ -1,31 +1,32 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 import connectDB from "@/lib/db"
 import User from "@/lib/models/User"
-import { hashPassword } from "@/lib/auth"
-import { sendWelcomeEmail, sendDoctorRegistrationEmail } from "@/lib/email"
+
+// Removed email imports - emails will be sent after verification
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB()
 
     const body = await request.json()
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      password,
-      role,
-      // Patient fields
-      dateOfBirth,
-      gender,
-      address,
-      // Doctor fields
-      specialization,
-      licenseNumber,
-      experience,
-      bio,
-    } = body
+    console.log('Registration request body:', body)
+    
+    const { firstName, lastName, email, phone, password, role, dateOfBirth, gender, address, specialization, licenseNumber, experience, consultationFee, bio } = body
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !phone || !password || !role) {
+      return NextResponse.json({ message: "Missing required fields" }, { status: 400 })
+    }
+
+    // Validate role-specific fields
+    if (role === "patient" && (!dateOfBirth || !gender || !address)) {
+      return NextResponse.json({ message: "Missing required patient fields: dateOfBirth, gender, address" }, { status: 400 })
+    }
+
+    if (role === "doctor" && (!specialization || !licenseNumber || experience === undefined)) {
+      return NextResponse.json({ message: "Missing required doctor fields: specialization, licenseNumber, experience" }, { status: 400 })
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email })
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user data
     const userData: Record<string, unknown> = {
@@ -44,40 +45,41 @@ export async function POST(request: NextRequest) {
       phone,
       password: hashedPassword,
       role,
+      isActive: true
     }
 
     // Add role-specific fields
-    if (role === "patient") {
-      userData.dateOfBirth = dateOfBirth
-      userData.gender = gender
-      userData.address = address
-    } else if (role === "doctor") {
+    if (role === "doctor") {
       userData.specialization = specialization
       userData.licenseNumber = licenseNumber
-      userData.experience = experience
-      userData.bio = bio
-      userData.consultationFee = 10000 // Default fee in Naira
-      userData.isVerified = false // Doctors need approval
+      userData.experience = parseInt(experience) || 0
+      userData.consultationFee = consultationFee || 10000
+      userData.bio = bio || ""
+      userData.rating = 0
+      userData.isVerified = false // Doctors need admin approval
+    } else if (role === "patient") {
+      userData.dateOfBirth = new Date(dateOfBirth)
+      userData.gender = gender
+      userData.address = address
     }
 
-    // Create user
-    const user = new User(userData)
-    await user.save()
+    console.log('Creating user with data:', userData)
+    const user = await User.create(userData)
+    console.log('User created successfully:', user._id)
 
-    // Send registration email
-    try {
-      if (role === "patient") {
-        await sendWelcomeEmail(email, firstName, lastName)
-      } else if (role === "doctor") {
-        await sendDoctorRegistrationEmail(email, firstName, lastName, specialization, licenseNumber, experience)
-      }
-    } catch (emailError) {
-      console.error("Failed to send registration email:", emailError)
-    }
+    // Don't send welcome email here - it will be sent after email verification
 
-    return NextResponse.json({ message: "User created successfully" }, { status: 201 })
+    return NextResponse.json({ 
+      message: role === "doctor" ? "Registration successful. Awaiting admin approval." : "Registration successful",
+      user: { id: user._id, email: user.email, role: user.role }
+    })
   } catch (error) {
     console.error("Registration error:", error)
+    if (error instanceof Error) {
+      console.error("Error message:", error.message)
+      console.error("Error stack:", error.stack)
+      return NextResponse.json({ message: error.message }, { status: 400 })
+    }
     return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }

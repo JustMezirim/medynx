@@ -15,7 +15,7 @@ export default function MaintenancePage() {
           </h1>
           
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            We're currently performing scheduled maintenance to improve your experience. 
+            We&apos;re currently performing scheduled maintenance to improve your experience. 
             We&apos;ll be back online shortly.
           </p>
           

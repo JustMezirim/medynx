@@ -15,14 +15,14 @@ const auth = async () => {
   try {
     const payload = await verifyToken(token)
     return { userId: payload.userId, role: payload.role }
-  } catch (error) {
+  } catch {
     throw new Error("Invalid token")
   }
 }
 
 export const ourFileRouter = {
   medicalFileUploader: f({ image: { maxFileSize: "4MB" }, pdf: { maxFileSize: "8MB" } })
-    .middleware(async ({ req }) => {
+    .middleware(async () => {
       const user = await auth()
       return { userId: user.userId, role: user.role }
     })

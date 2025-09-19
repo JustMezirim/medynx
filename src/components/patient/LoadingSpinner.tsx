@@ -8,15 +8,15 @@ interface LoadingSpinnerProps {
 }
 
 export function LoadingSpinner({ 
-  title = "Loading", 
-  subtitle = "Please wait...", 
+  // title = "Loading", 
+  // subtitle = "Please wait...", 
   message = "Loading data..." 
 }: LoadingSpinnerProps) {
   return (
     <div className="flex h-screen">
       <Sidebar userRole="patient" userName="Patient" />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title={title} subtitle={subtitle} />
+        <DashboardHeader  />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-blue-600 mx-auto"></div>

@@ -16,7 +16,17 @@ export async function POST(request: NextRequest) {
       // Update appointment payment status
       await Appointment.findByIdAndUpdate(appointmentId, {
         paymentStatus: "paid",
+        status: "confirmed",
         paymentId: data.id
+      })
+    } else if (event === "charge.failed") {
+      const reference = data.reference
+      const appointmentId = reference.split('_')[1]
+
+      // Mark appointment as payment failed
+      await Appointment.findByIdAndUpdate(appointmentId, {
+        paymentStatus: "failed",
+        status: "payment_failed"
       })
     }
 

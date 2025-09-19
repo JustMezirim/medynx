@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,21 +38,9 @@ export function ProfessionalForm({ profile, onSubmit, saving }: ProfessionalForm
     consultationFee: 0,
     bio: ''
   })
+  const [specializations] = useState<string[]>([])
 
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
-        phone: profile.phone || '',
-        specialization: profile.specialization || '',
-        licenseNumber: profile.licenseNumber || '',
-        experience: profile.experience || 0,
-        consultationFee: profile.consultationFee || 0,
-        bio: profile.bio || ''
-      })
-    }
-  }, [profile])
+  // Fetch replaced with React Query
 
   if (!profile) {
     return (
@@ -156,14 +144,11 @@ export function ProfessionalForm({ profile, onSubmit, saving }: ProfessionalForm
                   <SelectValue placeholder="Select specialization" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="general">General Medicine</SelectItem>
-                  <SelectItem value="cardiology">Cardiology</SelectItem>
-                  <SelectItem value="dermatology">Dermatology</SelectItem>
-                  <SelectItem value="neurology">Neurology</SelectItem>
-                  <SelectItem value="orthopedics">Orthopedics</SelectItem>
-                  <SelectItem value="pediatrics">Pediatrics</SelectItem>
-                  <SelectItem value="psychiatry">Psychiatry</SelectItem>
-                  <SelectItem value="radiology">Radiology</SelectItem>
+                  {specializations.map((spec) => (
+                    <SelectItem key={spec} value={spec}>
+                      {spec.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

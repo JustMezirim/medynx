@@ -1,7 +1,8 @@
 const ZOOM_ACCOUNT_ID = process.env.ZOOM_ACCOUNT_ID || ""
 const ZOOM_CLIENT_ID = process.env.ZOOM_CLIENT_ID || ""
 const ZOOM_CLIENT_SECRET = process.env.ZOOM_CLIENT_SECRET || ""
-const ZOOM_BASE_URL = "https://api.zoom.us/v2"
+const ZOOM_BASE_URL = process.env.ZOOM_BASE_URL || ""
+const ZOOM_AUTH_URL = process.env.ZOOM_AUTH_URL || ""
 
 interface ZoomMeetingResponse {
   id: string
@@ -10,22 +11,34 @@ interface ZoomMeetingResponse {
   start_url: string
 }
 
-export async function createZoomMeeting(topic: string, startTime: string, duration = 60): Promise<ZoomMeetingResponse> {
+export async function createZoomMeeting(topic: string, appointmentDate: Date, timeSlot: string, duration = 60): Promise<ZoomMeetingResponse> {
   const token = await getZoomAccessToken()
 
+  // Parse time slot and create proper start time
+  const [time, period] = timeSlot.split(' ')
+  const [hours, minutes] = time.split(':')
+  let hour24 = parseInt(hours)
+  
+  if (period === 'PM' && hour24 !== 12) hour24 += 12
+  if (period === 'AM' && hour24 === 12) hour24 = 0
+  
+  const meetingStartTime = new Date(appointmentDate)
+  meetingStartTime.setHours(hour24, parseInt(minutes), 0, 0)
+  
   const meetingData = {
     topic,
     type: 2,
-    start_time: startTime,
+    start_time: meetingStartTime.toISOString(),
     duration,
     timezone: "UTC",
     settings: {
       host_video: true,
       participant_video: true,
-      join_before_host: true,
+      join_before_host: false, // Don't allow joining before host until meeting time
       mute_upon_entry: true,
       approval_type: 0,
       audio: "both",
+      waiting_room: true, // Enable waiting room for security
     },
   }
 
@@ -48,7 +61,7 @@ export async function createZoomMeeting(topic: string, startTime: string, durati
 async function getZoomAccessToken(): Promise<string> {
   const credentials = Buffer.from(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`).toString('base64')
   
-  const response = await fetch('https://zoom.us/oauth/token', {
+  const response = await fetch(ZOOM_AUTH_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Basic ${credentials}`,

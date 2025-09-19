@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import connectDB from "@/lib/db"
-import Notification from "@/lib/models/Notification"
 import { verifyToken } from "@/lib/auth"
+import { markAsRead } from "@/lib/notifications"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const token = request.cookies.get("token")?.value
     if (!token) {
@@ -11,20 +10,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const decoded = await verifyToken(token)
-    await connectDB()
+    const { id } = await params
+    await markAsRead(decoded.userId, id)
 
-    const notification = await Notification.findOneAndUpdate(
-      { _id: params.id, recipient: decoded.userId },
-      { isRead: true },
-      { new: true }
-    )
-
-    if (!notification) {
-      return NextResponse.json({ error: "Notification not found" }, { status: 404 })
-    }
-
-    return NextResponse.json({ notification })
-  } catch (error) {
+    return NextResponse.json({ success: true })
+  } catch {
     return NextResponse.json({ error: "Failed to update notification" }, { status: 500 })
   }
 }

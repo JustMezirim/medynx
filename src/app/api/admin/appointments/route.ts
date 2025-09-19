@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt"
     const sortOrder = searchParams.get("sortOrder") || "desc"
 
-    const query: any = {}
+    const query: Record<string, string> = {}
 
     if (status && status !== "all") {
       query.status = status
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     const skip = (page - 1) * limit
-    const sortOptions: any = {}
+    const sortOptions: { [key: string]: 1 | -1 } = {}
     sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1
 
     let appointments = await Appointment.find(query)
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       appointments = appointments.filter(
-        (appointment: any) =>
+        (appointment: { patient: { firstName: string; lastName: string; email: string }; doctor: { firstName: string; lastName: string } }) =>
           appointment.patient.firstName.toLowerCase().includes(search.toLowerCase()) ||
           appointment.patient.lastName.toLowerCase().includes(search.toLowerCase()) ||
           appointment.doctor.firstName.toLowerCase().includes(search.toLowerCase()) ||

@@ -2,9 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import { verifyToken } from "@/lib/auth"
-import { triggerNotificationWebhook, NotificationEvents } from "@/lib/notifications"
+import { addNotification } from "@/lib/notifications"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -14,7 +14,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     const payload = await verifyToken(token)
-    const appointment = await Appointment.findById(params.id)
+    const { id } = await params
+    const appointment = await Appointment.findById(id)
       .populate("patient", "firstName lastName email phone")
       .populate("doctor", "firstName lastName specialization")
 
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -51,7 +52,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const payload = await verifyToken(token)
     const updates = await request.json()
 
-    const appointment = await Appointment.findById(params.id)
+    const { id } = await params
+    const appointment = await Appointment.findById(id)
     if (!appointment) {
       return NextResponse.json({ message: "Appointment not found" }, { status: 404 })
     }
@@ -73,15 +75,23 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     Object.assign(appointment, updates)
     await appointment.save()
 
-    // Trigger webhook for status changes
+    // Send notifications for status changes
     if (oldStatus !== appointment.status) {
       if (appointment.status === "confirmed") {
-        await triggerNotificationWebhook(NotificationEvents.APPOINTMENT_CONFIRMED, {
-          appointmentId: appointment._id.toString()
+        await addNotification({
+          recipient: appointment.patient.toString(),
+          title: "Appointment Confirmed",
+          message: "Your appointment has been confirmed",
+          type: "appointment",
+          relatedId: appointment._id.toString()
         })
       } else if (appointment.status === "cancelled") {
-        await triggerNotificationWebhook(NotificationEvents.APPOINTMENT_CANCELLED, {
-          appointmentId: appointment._id.toString()
+        await addNotification({
+          recipient: appointment.patient.toString(),
+          title: "Appointment Cancelled",
+          message: "Your appointment has been cancelled",
+          type: "appointment",
+          relatedId: appointment._id.toString()
         })
       }
     }

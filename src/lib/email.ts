@@ -55,10 +55,7 @@ export async function sendAppointmentConfirmationEmail(to: string, patientName: 
   return sendEmail({ to, subject: template.subject, html: template.html })
 }
 
-export async function sendAppointmentReminderEmail(to: string, patientName: string, doctorName: string, date: string, time: string) {
-  const template = emailTemplates.appointmentReminder(patientName, doctorName, date, time)
-  return sendEmail({ to, subject: template.subject, html: template.html })
-}
+
 
 export async function sendPasswordResetEmail(to: string, firstName: string, resetLink: string) {
   const template = emailTemplates.passwordReset(firstName, resetLink)
@@ -108,4 +105,28 @@ export async function sendMeetingLinkDoctorEmail(to: string, doctorName: string,
 export async function sendDoctorReactivationEmail(to: string, firstName: string, lastName: string) {
   const template = emailTemplates.doctorReactivation(firstName, lastName)
   return sendEmail({ to, subject: template.subject, html: template.html })
+}
+
+export async function sendAppointmentReminderEmail(
+  to: string,
+  recipientName: string,
+  otherPartyName: string,
+  appointmentDate: string,
+  appointmentTime: string,
+  meetingLink: string,
+  reminderTime: string
+) {
+  const template = emailTemplates.appointmentReminderCustom(recipientName, otherPartyName, appointmentDate, appointmentTime, meetingLink, reminderTime)
+  return sendEmail({ to, subject: template.subject, html: template.html })
+}
+
+export async function sendOTPEmail(to: string, otp: string, type: 'verification' | 'reset' = 'verification') {
+  const template = type === 'verification' 
+    ? emailTemplates.emailVerification(otp)
+    : emailTemplates.passwordResetOTP(otp)
+  return sendEmail({ to, subject: template.subject, html: template.html })
+}
+
+export const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString()
 }

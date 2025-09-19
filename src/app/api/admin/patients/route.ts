@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt"
     const sortOrder = searchParams.get("sortOrder") || "desc"
 
-    const query: any = { role: "patient" }
+    const query: Record<string, unknown> = { role: "patient" }
 
     if (search) {
       query.$or = [
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     const skip = (page - 1) * limit
-    const sortOptions: any = {}
+    const sortOptions: Record<string, 1 | -1> = {}
     sortOptions[sortBy] = sortOrder === "asc" ? 1 : -1
 
     const patients = await User.find(query)

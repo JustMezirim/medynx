@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -10,25 +9,13 @@ import { StatsCards } from "@/components/admin/dashboard/stats-cards"
 import { SecondaryStats } from "@/components/admin/dashboard/secondary-stats"
 import { SystemStatus } from "@/components/admin/dashboard/system-status"
 import { LoadingSpinner } from "@/components/admin"
-import { Target, CheckCircle, Timer, Star, Zap, FileText, Settings, AlertTriangle, BarChart3, Calendar, MoreHorizontal, Database, Clock } from 'lucide-react'
-import { showToast } from '@/components/ui/toast-helper'
+import { Target, CheckCircle, Timer, Star, Zap, FileText, Settings, AlertTriangle, BarChart3, Calendar, MoreHorizontal } from 'lucide-react'
+import { getStatusColor } from '@/components/ui/status-colors'
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { useDashboardStats, useRecentActivity, useSystemStatus, useChartData } from '@/hooks/admin/use-dashboard'
 
-interface DashboardStats {
-  totalPatients: number
-  totalDoctors: number
-  totalAdmins?: number
-  totalAppointments: number
-  todayAppointments: number
-  totalRevenue?: number
-  pendingApprovals?: number
-  activeUsers?: number
-  completedAppointments?: number
-  patientsGrowth?: number
-  doctorsGrowth?: number
-  appointmentsGrowth?: number
-}
+
 
 interface RecentAppointment {
   _id: string
@@ -51,116 +38,22 @@ interface AppointmentStat {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPatients: 0,
-    totalDoctors: 0,
-    totalAppointments: 0,
-    todayAppointments: 0,
-    totalRevenue: 0,
-    pendingApprovals: 0,
-    activeUsers: 0,
-    completedAppointments: 0,
-  })
-  const [recentAppointments, setRecentAppointments] = useState<RecentAppointment[]>([])
-  const [appointmentStats, setAppointmentStats] = useState<AppointmentStat[]>([])
-  const [systemStatus, setSystemStatus] = useState({
-    server: 'online',
-    database: 'connected',
-    maintenance: 'none'
-  })
-  const [loading, setLoading] = useState(true)
+  const { data: stats, isLoading: statsLoading } = useDashboardStats()
+  const { data: recentActivity } = useRecentActivity()
+  const { data: systemStatus } = useSystemStatus()
+  const { data: chartData } = useChartData('7d')
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
+  const recentAppointments = recentActivity?.recentAppointments || []
+  const appointmentStats = chartData?.appointmentStats || []
 
-  const fetchDashboardData = async () => {
-    try {
-      console.log('Fetching dashboard data...')
-      const [dashboardResponse, paymentsResponse] = await Promise.all([
-        fetch("/api/admin/dashboard"),
-        fetch("/api/admin/payments?limit=1")
-      ])
-      
-      const dashboardData = await dashboardResponse.json()
-      const paymentsData = await paymentsResponse.json()
-      
-      if (dashboardResponse.ok) {
-        // Use real data if available, otherwise fallback to test data
-        const statsData = dashboardData.stats || {
-          totalPatients: 156,
-          totalDoctors: 24,
-          totalAppointments: 489,
-          todayAppointments: 12,
-          totalRevenue: 45250,
-          activeUsers: 87,
-          pendingApprovals: 5,
-          completedAppointments: 432,
-          patientsGrowth: 12.5,
-          doctorsGrowth: 8.2,
-          appointmentsGrowth: 15.7,
-        }
-        
-        // Use revenue from payments API for consistency
-        if (paymentsResponse.ok && paymentsData.stats) {
-          statsData.totalRevenue = paymentsData.stats.totalRevenue
-        }
-        
-        setStats(statsData)
-        setRecentAppointments(dashboardData.recentAppointments || [])
-        setAppointmentStats(dashboardData.appointmentStats || [
-          { _id: "scheduled", count: 45 },
-          { _id: "completed", count: 432 },
-          { _id: "cancelled", count: 12 }
-        ])
-        setSystemStatus(dashboardData.systemStatus || {
-          server: "online",
-          database: "connected", 
-          maintenance: Date.now() % 2 === 0 ? "none" : "scheduled"
-        })
-        console.log("Stats set:", statsData)
-      } else {
-        console.error("API error:", dashboardData.message)
-        showToast.error(dashboardData.message || "Failed to load dashboard data")
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error)
-      showToast.error("Failed to load dashboard data")
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
-      case "completed":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
-      case "cancelled":
-        return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800"
-      case "no-show":
-        return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800"
-      default:
-        return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800"
-    }
-  }
 
-  const getSystemStatusIcon = (status: string) => {
-    switch (status) {
-      case "online":
-        return <CheckCircle className="h-4 w-4" />
-      case "connected":
-        return <Database className="h-4 w-4" />
-      case "scheduled":
-        return <Clock className="h-4 w-4" />
-      default:
-        return <AlertTriangle className="h-4 w-4" />
-    }
-  }
 
-  if (loading) {
-    return <LoadingSpinner title="Admin Dashboard" subtitle="System overview and management" message="Loading dashboard data..." />
+
+
+
+  if (statsLoading) {
+    return <LoadingSpinner />
   }
 
   return (
@@ -195,13 +88,13 @@ export default function AdminDashboard() {
             </div>
           </div> */}
           
-          <StatsCards stats={stats} />
+          <StatsCards stats={stats || {}} />
 
           <SecondaryStats 
-            totalRevenue={stats.totalRevenue}
-            activeUsers={stats.activeUsers}
-            pendingApprovals={stats.pendingApprovals}
-            completedAppointments={stats.completedAppointments}
+            totalRevenue={stats?.totalRevenue}
+            activeUsers={stats?.activeUsers}
+            pendingApprovals={stats?.pendingApprovals}
+            completedAppointments={stats?.completedAppointments}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -225,8 +118,8 @@ export default function AdminDashboard() {
                     <span className="text-sm text-slate-600 dark:text-slate-400">Completion Rate</span>
                   </div>
                   <span className="font-bold text-emerald-600">
-                    {stats.totalAppointments > 0 
-                      ? Math.round(((stats.completedAppointments || 0) / stats.totalAppointments) * 100)
+                    {(stats?.totalAppointments || 0) > 0 
+                      ? Math.round(((stats?.completedAppointments || 0) / (stats?.totalAppointments || 1)) * 100)
                       : 0}%
                   </span>
                 </div>
@@ -236,9 +129,9 @@ export default function AdminDashboard() {
                     <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded">
                       <Timer className="h-3 w-3 text-blue-600" />
                     </div>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">Today"s Schedule</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">Today&quot;s Schedule</span>
                   </div>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats.todayAppointments} appts</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100">{stats?.todayAppointments || 0} appts</span>
                 </div>
                 
                 <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
@@ -248,7 +141,7 @@ export default function AdminDashboard() {
                     </div>
                     <span className="text-sm text-slate-600 dark:text-slate-400">Pending Reviews</span>
                   </div>
-                  <span className="font-bold text-blue-600">{stats.pendingApprovals || 0}</span>
+                  <span className="font-bold text-blue-600">{stats?.pendingApprovals || 0}</span>
                 </div>
               </CardContent>
             </Card>
@@ -309,7 +202,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {recentAppointments.length > 0 ? (
-                    recentAppointments.map((appointment) => (
+                    recentAppointments.map((appointment: RecentAppointment) => (
                       <div
                         key={appointment._id}
                         className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-all duration-200 border border-slate-200 dark:border-slate-700"
@@ -400,7 +293,7 @@ export default function AdminDashboard() {
                     </ChartContainer>
                     
                     <div className="space-y-3">
-                      {appointmentStats.map((stat) => (
+                      {appointmentStats.map((stat: AppointmentStat) => (
                         <div key={stat._id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                           <Badge className={`${getStatusColor(stat._id)} border font-medium`} variant="outline">
                             {stat._id.charAt(0).toUpperCase() + stat._id.slice(1)}

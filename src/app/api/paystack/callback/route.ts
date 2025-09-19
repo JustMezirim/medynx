@@ -25,12 +25,36 @@ export async function GET(request: NextRequest) {
     if (verifyData.status && verifyData.data.status === "success") {
       const appointmentId = reference.split("_")[1]
       
+      console.log('Payment successful for appointment:', appointmentId)
+      
       // Update appointment status
       await Appointment.findByIdAndUpdate(appointmentId, {
         paymentStatus: "paid",
         paymentId: verifyData.data.id,
         status: "confirmed"
       })
+
+      // Trigger webhook for Zoom meeting generation
+      console.log('Triggering payment success webhook')
+      try {
+        const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/webhooks/payment-success`
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            appointmentId: appointmentId
+          })
+        })
+        
+        console.log('Webhook response status:', response.status)
+        if (!response.ok) {
+          console.error('Webhook failed')
+        }
+      } catch (error) {
+        console.error('Failed to trigger webhook:', error)
+      }
 
       return NextResponse.redirect(new URL("/dashboard/patient/appointments?status=success", request.url))
     } else {

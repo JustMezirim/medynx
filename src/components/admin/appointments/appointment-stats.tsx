@@ -11,10 +11,23 @@ interface AppointmentStats {
 }
 
 interface AppointmentStatsProps {
-  stats: AppointmentStats
+  stats?: AppointmentStats
 }
 
 export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i} className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-slate-200 to-slate-300">
+            <CardContent className="p-6">
+              <div className="h-16 bg-slate-300 animate-pulse rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
       <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -25,7 +38,7 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.total}</div>
+          <div className="text-3xl font-bold">{stats?.total || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <TrendingUp className="h-3 w-3 mr-1" />
             <span>All time</span>
@@ -42,7 +55,7 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.scheduled}</div>
+          <div className="text-3xl font-bold">{stats?.scheduled || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Upcoming appointments</span>
           </div>
@@ -58,9 +71,9 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.completed}</div>
+          <div className="text-3xl font-bold">{stats?.completed || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
-            <span>{stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}% completion rate</span>
+            <span>{(stats?.total || 0) > 0 ? Math.round(((stats?.completed || 0) / (stats?.total || 1)) * 100) : 0}% completion rate</span>
           </div>
         </CardContent>
         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
@@ -74,7 +87,7 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.cancelled}</div>
+          <div className="text-3xl font-bold">{stats?.cancelled || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Cancelled bookings</span>
           </div>
@@ -90,9 +103,9 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.todayAppointments}</div>
+          <div className="text-3xl font-bold">{stats?.todayAppointments || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
-            <span>Today"s schedule</span>
+            <span>Today&apos;s schedule</span>
           </div>
         </CardContent>
         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
@@ -106,7 +119,7 @@ export function AppointmentStatsCards({ stats }: AppointmentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">₦{stats.totalRevenue}</div>
+          <div className="text-3xl font-bold">₦{stats?.totalRevenue || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Total earnings</span>
           </div>

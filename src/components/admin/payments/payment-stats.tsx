@@ -10,10 +10,23 @@ interface PaymentStats {
 }
 
 interface PaymentStatsProps {
-  stats: PaymentStats
+  stats?: PaymentStats
 }
 
 export function PaymentStatsCards({ stats }: PaymentStatsProps) {
+  if (!stats) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i} className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-slate-200 to-slate-300">
+            <CardContent className="p-6">
+              <div className="h-16 bg-slate-300 animate-pulse rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       <Card className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
@@ -24,7 +37,7 @@ export function PaymentStatsCards({ stats }: PaymentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">₦{stats.totalRevenue.toLocaleString()}</div>
+          <div className="text-3xl font-bold">₦{(stats?.totalRevenue || 0).toLocaleString()}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <TrendingUp className="h-3 w-3 mr-1" />
             <span>All time earnings</span>
@@ -41,7 +54,7 @@ export function PaymentStatsCards({ stats }: PaymentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.totalTransactions}</div>
+          <div className="text-3xl font-bold">{stats?.totalTransactions || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Payment transactions</span>
           </div>
@@ -57,9 +70,9 @@ export function PaymentStatsCards({ stats }: PaymentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.successfulPayments}</div>
+          <div className="text-3xl font-bold">{stats?.successfulPayments || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
-            <span>{stats.totalTransactions > 0 ? Math.round((stats.successfulPayments / stats.totalTransactions) * 100) : 0}% success rate</span>
+            <span>{(stats?.totalTransactions || 0) > 0 ? Math.round(((stats?.successfulPayments || 0) / (stats?.totalTransactions || 1)) * 100) : 0}% success rate</span>
           </div>
         </CardContent>
         <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10"></div>
@@ -73,7 +86,7 @@ export function PaymentStatsCards({ stats }: PaymentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">₦{stats.refundedAmount.toLocaleString()}</div>
+          <div className="text-3xl font-bold">₦{(stats?.refundedAmount || 0).toLocaleString()}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Total refunds</span>
           </div>
@@ -89,7 +102,7 @@ export function PaymentStatsCards({ stats }: PaymentStatsProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">{stats.pendingPayments}</div>
+          <div className="text-3xl font-bold">{stats?.pendingPayments || 0}</div>
           <div className="flex items-center mt-2 text-xs opacity-80">
             <span>Awaiting processing</span>
           </div>

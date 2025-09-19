@@ -8,6 +8,9 @@ export interface IUser extends Document {
   password: string
   role: "patient" | "doctor" | "admin"
   isActive: boolean
+  emailVerified: boolean
+  emailVerificationToken?: string
+  emailVerificationExpires?: Date
   createdAt: Date
   updatedAt: Date
 
@@ -35,6 +38,9 @@ const UserSchema = new Schema<IUser>(
     password: { type: String, required: true },
     role: { type: String, enum: ["patient", "doctor", "admin"], required: true },
     isActive: { type: Boolean, default: true },
+    emailVerified: { type: Boolean, default: false },
+    emailVerificationToken: { type: String },
+    emailVerificationExpires: { type: Date },
 
     // Patient fields
     dateOfBirth: { type: Date },
@@ -42,12 +48,18 @@ const UserSchema = new Schema<IUser>(
     address: { type: String },
 
     // Doctor fields
-    specialization: { type: String },
-    licenseNumber: { type: String },
+    specialization: { 
+      type: String,
+      required: function() { return this.role === 'doctor' }
+    },
+    licenseNumber: { 
+      type: String,
+      required: function() { return this.role === 'doctor' }
+    },
     experience: { type: Number },
     bio: { type: String },
     rating: { type: Number, default: 0 },
-    consultationFee: { type: Number, default: 10000 },
+    consultationFee: { type: Number },
     isVerified: { type: Boolean, default: false },
   },
   {

@@ -2,31 +2,33 @@ import { type NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import User from "@/lib/models/User"
-import { verifyToken } from "@/lib/auth"
-import { createZoomMeeting } from "@/lib/zoom"
+import { withAuth } from "@/lib/auth-middleware"
+// import { createZoomMeeting } from "@/lib/zoom"
+// import { webhooks } from "@/lib/webhooks"
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    const authResult = await withAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
     }
+    const { payload } = authResult
 
-    const payload = await verifyToken(token)
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
     // Build query based on user role
-    const query: any = {}
+    const query: Record<string, unknown> = {}
 
     if (payload.role === "patient") {
       query.patient = payload.userId
     } else if (payload.role === "doctor") {
       query.doctor = payload.userId
+      query.paymentStatus = "paid" // Only show paid appointments to doctors
     }
 
     if (status && status !== "all") {
@@ -38,7 +40,7 @@ export async function GET(request: NextRequest) {
       .populate("doctor", "firstName lastName specialization")
       .skip((page - 1) * limit)
       .limit(limit)
-      .sort({ date: -1, timeSlot: -1 })
+      .sort({ createdAt: -1 })
 
     const total = await Appointment.countDocuments(query)
 
@@ -61,12 +63,12 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB()
 
-    const token = request.cookies.get("token")?.value
-    if (!token) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
+    const authResult = await withAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
     }
+    const { payload } = authResult
 
-    const payload = await verifyToken(token)
     if (payload.role !== "patient") {
       return NextResponse.json({ message: "Only patients can book appointments" }, { status: 403 })
     }
@@ -79,7 +81,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Doctor not found" }, { status: 404 })
     }
 
-    // Check if slot is available
+    // Check if slot is available (exclude payment_pending as they may not complete payment)
     const existingAppointment = await Appointment.findOne({
       doctor: doctorId,
       date: new Date(date),
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Time slot not available" }, { status: 400 })
     }
 
-    // Create appointment
+    // Create appointment with payment_pending status
     const appointment = new Appointment({
       patient: payload.userId,
       doctor: doctorId,
@@ -100,16 +102,17 @@ export async function POST(request: NextRequest) {
       symptoms,
       type: type || "video",
       amount: doctor.consultationFee || 100,
-      status: "pending",
+      status: "pending", // Will be updated after payment
+      paymentStatus: "pending",
     })
 
     await appointment.save()
 
-    // Zoom meeting will be created after payment confirmation
+    // No notifications sent until payment is confirmed
 
     return NextResponse.json(
       {
-        message: "Appointment created successfully",
+        message: "Appointment booking initiated. Please complete payment.",
         appointment,
       },
       { status: 201 },

@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, Calendar, Save, Copy, RotateCcw, CheckCircle, Settings, Trash2, ChevronLeft, ChevronRight, Plus, Users, TrendingUp, CalendarDays, Filter } from 'lucide-react'
+import { Clock, Calendar, Save, Copy, RotateCcw, CheckCircle, Settings, Trash2, ChevronLeft, ChevronRight, TrendingUp, CalendarDays } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface TimeSlot {
@@ -218,7 +218,7 @@ export default function DoctorAvailabilityCalendar () {
   const [copyFromDate, setCopyFromDate] = useState<string>("")
   const [customTime, setCustomTime] = useState<string>("")
   const [showStats, setShowStats] = useState(false)
-  const [filterView, setFilterView] = useState<"all" | "available" | "unavailable">("all")
+
   const timeSlotsRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
 
@@ -253,11 +253,11 @@ export default function DoctorAvailabilityCalendar () {
           const data = await response.json()
           const availabilityMap: Record<string, DayAvailability> = {}
           
-          data.availabilities.forEach((avail: any) => {
+          data.availabilities.forEach((avail: { date: string; timeSlots: { time: string; isBooked: boolean }[] }) => {
             const dateKey = new Date(avail.date).toISOString().split('T')[0]
             availabilityMap[dateKey] = {
               date: dateKey,
-              slots: avail.timeSlots.map((slot: any) => ({
+              slots: avail.timeSlots.map((slot: { time: string; isBooked: boolean }) => ({
                 id: `slot-${slot.time}`,
                 time: slot.time,
                 isAvailable: !slot.isBooked

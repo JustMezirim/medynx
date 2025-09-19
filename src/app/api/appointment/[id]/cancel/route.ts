@@ -5,7 +5,7 @@ import { verifyToken } from "@/lib/auth"
 import { sendAppointmentCancellationEmail } from "@/lib/email"
 import { triggerNotificationWebhook, NotificationEvents } from "@/lib/notifications"
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB()
 
@@ -19,7 +19,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ message: "Only admin can cancel appointments" }, { status: 403 })
     }
 
-    const appointment = await Appointment.findById(params.id)
+    const { id } = await params
+    const appointment = await Appointment.findById(id)
       .populate("patient", "firstName lastName email")
       .populate("doctor", "firstName lastName email")
 

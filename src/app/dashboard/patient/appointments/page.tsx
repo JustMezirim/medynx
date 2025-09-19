@@ -1,110 +1,35 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Sidebar } from "@/components/layout/sidebar"
 import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { AppointmentStats, AppointmentFilters, UpcomingAppointmentCard, PastAppointmentCard, EmptyState } from "@/components/patient"
+import { usePatientAppointments, useCancelAppointment, useJoinMeeting } from "@/hooks/patient/use-patient-appointments"
+import type { Appointment } from "@/lib/api/patient/appointments"
 import { showToast } from "@/components/ui/toast-helper"
 
-interface Appointment {
-  _id: string
-  doctor: {
-    firstName: string
-    lastName: string
-    specialization: string
-  }
-  date: string
-  timeSlot: string
-  status: string
-  type: string
-  symptoms?: string
-  diagnosis?: string
-  prescription?: string
-  amount: number
-  zoomJoinUrl?: string
-  zoomPassword?: string
-}
-
 export default function PatientAppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [reviewText, setReviewText] = useState("")
   const [rating, setRating] = useState(5)
 
-  useEffect(() => {
-    fetchAppointments()
-  }, [statusFilter, searchTerm, currentPage])
-
-  const fetchAppointments = async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "10",
-        ...(statusFilter !== "all" && { status: statusFilter }),
-        ...(searchTerm && { search: searchTerm }),
-      })
-
-      const response = await fetch(`/api/appointment?${params}`)
-      const data = await response.json()
-
-      setAppointments(data.appointments || [])
-      setTotalPages(data.pagination?.pages || 1)
-    } catch (error) {
-      console.error("Error fetching appointments:", error)
-      showToast.error("Failed to load appointments")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { data: appointments = [], isLoading } = usePatientAppointments()
+  const cancelAppointment = useCancelAppointment()
+  const joinMeeting = useJoinMeeting()
 
   const handleCancelAppointment = async (appointmentId: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) {
       return
     }
-
-    try {
-      const response = await fetch(`/api/appointment/${appointmentId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "cancelled" }),
-      })
-
-      if (response.ok) {
-        showToast.success("Appointment cancelled successfully")
-        fetchAppointments()
-      } else {
-        const data = await response.json()
-        showToast.error(data.message || "Failed to cancel appointment")
-      }
-    } catch (error) {
-      console.error("Error cancelling appointment:", error)
-      showToast.error("An error occurred while cancelling")
-    }
+    await cancelAppointment.mutateAsync(appointmentId)
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800"
-      case "pending":
-        return "bg-yellow-100 text-yellow-800"
-      case "completed":
-        return "bg-blue-100 text-blue-800"
-      case "cancelled":
-        return "bg-red-100 text-red-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  const handleJoinMeeting = async (appointmentId: string) => {
+    await joinMeeting.mutateAsync(appointmentId)
   }
 
   const canJoinMeeting = (appointment: Appointment): boolean => {
@@ -115,7 +40,6 @@ export default function PatientAppointmentsPage() {
 
     return Boolean(
       appointment.status === "confirmed" &&
-      appointment.type === "video" &&
       appointment.zoomJoinUrl &&
       minutesDiff <= 15 &&
       minutesDiff >= -60
@@ -145,9 +69,8 @@ export default function PatientAppointmentsPage() {
         setSelectedAppointment(null)
         setReviewText("")
         setRating(5)
-        fetchAppointments()
       }
-    } catch (error) {
+    } catch {
       showToast.error("Failed to submit review")
     }
   }
@@ -159,14 +82,22 @@ export default function PatientAppointmentsPage() {
     return matchesSearch
   })
 
-  const upcomingAppointments = filteredAppointments.filter(apt => 
-    apt.status === 'confirmed' && new Date(apt.date) >= new Date()
-  )
-  const pastAppointments = filteredAppointments.filter(apt => 
-    apt.status === 'completed' || new Date(apt.date) < new Date()
-  )
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  const upcomingAppointments = filteredAppointments.filter(apt => {
+    const appointmentDate = new Date(apt.date)
+    appointmentDate.setHours(0, 0, 0, 0)
+    return (apt.status === 'confirmed' || apt.status === 'pending') && appointmentDate >= today
+  })
+  
+  const pastAppointments = filteredAppointments.filter(apt => {
+    const appointmentDate = new Date(apt.date)
+    appointmentDate.setHours(0, 0, 0, 0)
+    return apt.status === 'completed' || apt.status === 'cancelled' || appointmentDate < today
+  })
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen">
         <Sidebar userRole="patient" userName="John Doe" />
@@ -185,7 +116,7 @@ export default function PatientAppointmentsPage() {
       <Sidebar userRole="patient" userName="John Doe" />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader title="My Appointments" subtitle="View and manage your medical appointments" />
+        <DashboardHeader />
 
         <main className="flex-1 overflow-y-auto p-6">
           <AppointmentStats 
@@ -215,7 +146,7 @@ export default function PatientAppointmentsPage() {
                     key={appointment._id}
                     appointment={appointment}
                     onCancel={handleCancelAppointment}
-                    onJoinMeeting={(url) => window.open(url, "_blank")}
+                    onJoinMeeting={() => handleJoinMeeting(appointment._id)}
                     canJoinMeeting={canJoinMeeting(appointment)}
                     canCancel={canCancelAppointment(appointment)}
                   />
@@ -246,30 +177,7 @@ export default function PatientAppointmentsPage() {
             </TabsContent>
           </Tabs>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-8">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
 
-              <span className="text-sm text-gray-600">
-                Page {currentPage} of {totalPages}
-              </span>
-
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </Button>
-            </div>
-          )}
         </main>
       </div>
     </div>

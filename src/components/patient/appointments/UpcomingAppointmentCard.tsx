@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Clock, Video, X, MapPin } from "lucide-react"
+import { Calendar, Clock, Video, X } from "lucide-react"
 import Image from "next/image"
 
 interface Appointment {
@@ -14,7 +14,7 @@ interface Appointment {
   date: string
   timeSlot: string
   status: string
-  type: string
+  type?: string
   symptoms?: string
   amount: number
   zoomJoinUrl?: string
@@ -60,14 +60,8 @@ export function UpcomingAppointmentCard({
                   className="rounded-full"
                 />
               </div>
-              <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center ${
-                appointment.type === "video" ? "bg-blue-500" : "bg-green-500"
-              }`}>
-                {appointment.type === "video" ? (
-                  <Video className="h-3 w-3 text-white" />
-                ) : (
-                  <MapPin className="h-3 w-3 text-white" />
-                )}
+              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center bg-blue-500">
+                <Video className="h-3 w-3 text-white" />
               </div>
             </div>
 
@@ -96,10 +90,8 @@ export function UpcomingAppointmentCard({
                   <span className="text-green-600 font-bold">₦{appointment.amount}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    appointment.type === "video" ? "bg-blue-100 text-blue-800" : "bg-green-100 text-green-800"
-                  }`}>
-                    {appointment.type === "video" ? "Video Call" : "In-Person"}
+                  <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                    Video Call
                   </span>
                 </div>
               </div>
@@ -121,7 +113,7 @@ export function UpcomingAppointmentCard({
                 className="bg-green-600 hover:bg-green-700" 
                 onClick={() => onJoinMeeting(appointment.zoomJoinUrl!)}
               >
-                <Video className="h-4 w-4 mr-2" />
+                <Video className="h-5 w-5 mr-2" />
                 Join Now
               </Button>
             )}
@@ -132,7 +124,7 @@ export function UpcomingAppointmentCard({
                 className="border-red-200 hover:bg-red-50" 
                 onClick={() => onCancel(appointment._id)}
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="h-5 w-5 mr-2" />
                 Cancel
               </Button>
             )}

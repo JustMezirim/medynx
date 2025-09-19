@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Mail, Stethoscope, Calendar, Clock, Video, User, MoreHorizontal, Eye, Edit, CheckCircle, XCircle, Trash2 } from "lucide-react"
+import { Video, MoreHorizontal, Eye, Edit, CheckCircle, XCircle, Trash2 } from "lucide-react"
 
 interface Appointment {
   _id: string
@@ -107,69 +107,51 @@ export function AppointmentsTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <Avatar className="h-12 w-12 mr-4 ring-2 ring-white shadow-md">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold">
+                      <Avatar className="h-10 w-10 mr-3">
+                        <AvatarFallback className="bg-purple-100 text-purple-600">
                           {appointment.patient.firstName[0]}{appointment.patient.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {appointment.patient.firstName} {appointment.patient.lastName}
                         </div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
+                        <div className="text-sm text-gray-500">
                           {appointment.patient.email}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        Dr. {appointment.doctor.firstName} {appointment.doctor.lastName}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 capitalize flex items-center gap-1">
-                        <Stethoscope className="h-3 w-3" />
-                        {appointment.doctor.specialization}
-                      </div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
+                      Dr. {appointment.doctor.firstName} {appointment.doctor.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500 capitalize">
+                      {appointment.doctor.specialization}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-slate-900 dark:text-slate-100 flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-slate-400" />
+                    <div className="text-sm text-gray-900 dark:text-gray-100">
                       {new Date(appointment.date).toLocaleDateString()}
                     </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
+                    <div className="text-sm text-gray-500">
                       {appointment.timeSlot}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1 rounded ${appointment.type === "video" ? "bg-blue-100 dark:bg-blue-900/30" : "bg-green-100 dark:bg-green-900/30"}`}>
-                        {appointment.type === "video" ? (
-                          <Video className="h-3 w-3 text-blue-600" />
-                        ) : (
-                          <User className="h-3 w-3 text-green-600" />
-                        )}
-                      </div>
-                      <span className="text-sm capitalize font-medium">{appointment.type}</span>
-                    </div>
-                    {appointment.meetingLink && (
-                      <div className="text-xs text-emerald-600 mt-1 font-medium">Meeting Ready</div>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    Video Call
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={`${getStatusColor(appointment.status)} border font-medium`}>
+                    <Badge className={getStatusColor(appointment.status)}>
                       {appointment.status}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge className={`${getPaymentStatusColor(appointment.paymentStatus)} border font-medium`}>
+                    <Badge className={getPaymentStatusColor(appointment.paymentStatus)}>
                       {appointment.paymentStatus}
                     </Badge>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     ₦{appointment.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -184,14 +166,14 @@ export function AppointmentsTable({
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        {appointment.status === "scheduled" && (
+                        {(appointment.status === "confirmed" || appointment.status === "pending") && (
                           <DropdownMenuItem>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Appointment
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        {appointment.status === "scheduled" && (
+                        {(appointment.status === "confirmed" || appointment.status === "pending") && (
                           <DropdownMenuItem
                             onClick={() => onAction("update", appointment._id, "completed")}
                             className="text-emerald-600"
@@ -200,7 +182,7 @@ export function AppointmentsTable({
                             Mark Completed
                           </DropdownMenuItem>
                         )}
-                        {appointment.status === "scheduled" && (
+                        {(appointment.status === "confirmed" || appointment.status === "pending") && (
                           <DropdownMenuItem
                             onClick={() => onAction("update", appointment._id, "cancelled")}
                             className="text-red-600"
@@ -209,7 +191,7 @@ export function AppointmentsTable({
                             Cancel
                           </DropdownMenuItem>
                         )}
-                        {appointment.type === "video" && !appointment.meetingLink && appointment.status === "scheduled" && (
+                        {!appointment.meetingLink && (appointment.status === "confirmed" || appointment.status === "pending") && (
                           <DropdownMenuItem
                             onClick={() => onAction("zoom", appointment._id)}
                             className="text-blue-600"

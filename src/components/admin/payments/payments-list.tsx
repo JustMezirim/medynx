@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { CheckCircle, Clock, XCircle, RefreshCw, AlertCircle, CreditCard, Eye, Mail, User, FileText, Calendar } from "lucide-react"
+import { RefreshCw, Eye, Mail, User, FileText, Calendar } from "lucide-react"
 
 interface Payment {
   _id: string
@@ -153,7 +153,7 @@ export function PaymentsList({
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900 dark:text-slate-100">
-                            {new Date(payment.appointment.date).toLocaleDateString()} at {payment.appointment.time}
+                            {payment.appointment.date} at {payment.appointment.time}
                           </p>
                           <p className="text-sm text-slate-500">Appointment Date</p>
                         </div>

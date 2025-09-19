@@ -1,14 +1,13 @@
 # Medynx - Doctor Appointment System
 
-A modern, full-stack web application for booking and managing doctor appointments with video consultation capabilities and advanced animations.
+A modern, full-stack web application for booking and managing video consultations with doctors, featuring integrated Zoom meetings and advanced animations.
 
 ## 🚀 Features
 
 ### Core Functionality
 - **User Authentication**: Secure login/register system with JWT tokens and animated UI
 - **Role-Based Access**: Three user roles (Patient, Doctor, Admin) with specific permissions
-- **Appointment Booking**: Real-time appointment scheduling with availability management
-- **Video Consultations**: Integrated Zoom meetings for remote consultations
+- **Video Consultations**: Real-time video appointment scheduling with integrated Zoom meetings
 - **Payment Processing**: Paystack integration for secure payment handling
 - **Medical Records**: Digital storage and management of patient medical files
 - **Dashboard Analytics**: Comprehensive dashboards for all user types
@@ -18,14 +17,14 @@ A modern, full-stack web application for booking and managing doctor appointment
 
 #### Patients
 - Browse and search verified doctors with animated cards
-- Book appointments with real-time availability and interactive timeline
-- Join video consultations through integrated Zoom
+- Book video consultations with real-time availability and interactive timeline
+- Join video meetings through integrated Zoom
 - View appointment history and medical records
 - Make secure payments via Paystack integration
 
 #### Doctors
 - Manage appointment schedules and availability
-- Conduct video consultations with patients
+- Conduct video consultations with patients via Zoom
 - Access patient medical records securely
 - Update consultation notes and prescriptions
 - View earnings and appointment statistics
@@ -40,14 +39,15 @@ A modern, full-stack web application for booking and managing doctor appointment
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 15** - React framework with App Router and Turbopack
-- **TypeScript** - Type-safe development with strict typing
+- **Next.js 15** - React framework with App Router, Turbopack, and async params support
+- **TypeScript** - Type-safe development with strict typing and comprehensive error handling
 - **Tailwind CSS** - Utility-first CSS framework with custom configurations
 - **Framer Motion** - Advanced animation library for smooth interactions
 - **Radix UI** - Accessible component library with custom styling
 - **Lucide React** - Modern icon library with consistent design
 - **React Hook Form** - Form handling with validation and error management
 - **Zod** - Runtime type validation and schema parsing
+- **React Query** - Server state management with caching and synchronization
 
 ### Backend
 - **Next.js API Routes** - Server-side API endpoints with middleware
@@ -62,10 +62,11 @@ A modern, full-stack web application for booking and managing doctor appointment
 - **Nodemailer** - Email notifications and appointment reminders
 
 ### Development Tools
-- **ESLint** - Code linting with Next.js configuration
-- **TypeScript** - Static type checking
-- **Tailwind CSS** - Utility-first styling
-- **Turbopack** - Fast development server
+- **ESLint** - Code linting with Next.js configuration and strict rules
+- **TypeScript** - Static type checking with comprehensive error resolution
+- **Tailwind CSS** - Utility-first styling with consistent design system
+- **Turbopack** - Fast development server with hot reload
+- **React Query DevTools** - Development tools for server state debugging
 
 ## 📁 Project Structure
 
@@ -231,7 +232,7 @@ interface IUser {
   
   // Patient-specific fields
   dateOfBirth?: Date
-  gender?: "Male" | "Female" | "Other"
+  gender?: "Male" | "Female"
   address?: string
   
   // Doctor-specific fields
@@ -258,7 +259,7 @@ interface IAppointment {
   date: Date
   timeSlot: string
   status: "pending" | "confirmed" | "completed" | "cancelled"
-  type: "video" | "in-person"
+  type: "video"
   symptoms?: string
   diagnosis?: string
   prescription?: string
@@ -465,6 +466,22 @@ npm run seed-users   # Seed database with initial users
 npm run clean        # Clean build artifacts
 ```
 
+## 🔧 Recent Updates
+
+### TypeScript & Build Improvements
+- **Next.js 15 Compatibility**: Updated all dynamic route handlers to use async params pattern
+- **Type Safety**: Resolved all TypeScript errors with proper type assertions and interfaces
+- **ESLint Clean**: Removed all unused imports, variables, and interfaces across the codebase
+- **React Query Integration**: Migrated notifications component to use React Query architecture
+- **Hook Optimization**: Fixed React hooks dependency warnings with useMemo implementation
+
+### Code Quality Enhancements
+- **Centralized Status Colors**: Added notification status colors to unified status-colors utility
+- **API Client Architecture**: Separated API logic into dedicated client modules
+- **Error Handling**: Improved error handling with proper type safety
+- **Performance**: Optimized component re-renders with proper dependency management
+- **Build Success**: All TypeScript compilation errors and ESLint warnings resolved
+
 ## 🎯 Component Architecture
 
 ### Homepage Components
@@ -583,7 +600,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 <!-- ## 📞 Support
 
 For support and questions:
-- **Email**: support@Medynx.com
+- **Email**: medynxcare@gmail.com
 - **Phone**: +1 (555) 123-4567
 - **Documentation**: [docs.Medynx.com](https://docs.Medynx.com)
 - **GitHub Issues**: [Report bugs and feature requests](https://github.com/Medynx/issues)

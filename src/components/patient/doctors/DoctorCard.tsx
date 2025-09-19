@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Star, Clock, Users, Award, Video, MapPin, Calendar, Bookmark, BookmarkPlus } from "lucide-react"
+import { Star, Clock, Users, Award, Video, Calendar, Bookmark, BookmarkPlus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -17,9 +17,7 @@ interface Doctor {
   isVerified: boolean
   totalPatients?: number
   nextAvailable?: string
-  workingHours?: {
-    [key: string]: { start: string; end: string }
-  }
+  hasAvailability?: boolean
 }
 
 interface DoctorCardProps {
@@ -114,17 +112,13 @@ export function DoctorCard({ doctor, viewMode, isFavorite, onToggleFavorite }: D
           </div>
 
           <div className="flex items-center space-x-2 mb-4">
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
               <Video className="h-3 w-3 mr-1" />
-              Video
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              <MapPin className="h-3 w-3 mr-1" />
-              In-person
+              Video Consultation Only
             </Badge>
           </div>
 
-          {doctor.workingHours && Object.values(doctor.workingHours).some(hours => hours.start !== "Closed") ? (
+          {doctor.hasAvailability ? (
             <Link href={`/dashboard/patient/doctors/${doctor._id}`} className="block">
               <Button className="w-full bg-blue-600 hover:bg-blue-700 group-hover:bg-blue-700 transition-colors">
                 <Calendar className="h-4 w-4 mr-2" />

@@ -2,41 +2,42 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { Stethoscope, Calendar, FileText, FlaskConical, Heart, Pill } from "lucide-react"
 
 const ServicesSection = () => {
   const services = [
     {
-      icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
+      icon: Stethoscope,
       title: "Doctor Consultation",
       description: "Connect with certified doctors for online consultations and medical advice.",
       color: "blue"
     },
     {
-      icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+      icon: Calendar,
       title: "Appointment Booking",
       description: "Schedule appointments with specialists at your convenience.",
       color: "teal"
     },
     {
-      icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      icon: FileText,
       title: "Health Records",
       description: "Secure digital storage and management of your medical records.",
       color: "green"
     },
     {
-      icon: "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z",
+      icon: FlaskConical,
       title: "Lab Tests",
       description: "Order lab tests online and get results delivered to your dashboard.",
       color: "purple"
     },
     {
-      icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a6 6 0 003.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z",
+      icon: Heart,
       title: "Mental Health",
       description: "Connect with licensed therapists and mental health professionals.",
       color: "orange"
     },
     {
-      icon: "M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z",
+      icon: Pill,
       title: "Prescription Delivery",
       description: "Get your medications delivered to your doorstep with our pharmacy partners.",
       color: "pink"
@@ -102,6 +103,7 @@ const ServicesSection = () => {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/online-doctor_prev_ui.png"
                 alt="Video consultation"
@@ -126,9 +128,7 @@ const ServicesSection = () => {
                 whileHover={{ scale: 1.2, rotate: 360 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
-                <svg className={`w-6 h-6 text-${service.color}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={service.icon} />
-                </svg>
+                <service.icon className={`w-6 h-6 text-${service.color}-600`} />
               </motion.div>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">{service.title}</h3>
               <p className="text-gray-600 mb-4">{service.description}</p>

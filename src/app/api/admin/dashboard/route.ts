@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     let payload
     try {
       payload = await verifyToken(token)
-    } catch (error) {
+    } catch {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 })
     }
     
@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
     ])
     const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0
 
-    // Calculate growth percentages (last 30 days vs previous 30 days)
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
     const sixtyDaysAgo = new Date()

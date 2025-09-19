@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import connectDB from "@/lib/db"
 import Appointment from "@/lib/models/Appointment"
 import { sendAppointmentConfirmedPatientEmail, sendAppointmentBookedDoctorEmail, sendMeetingLinkPatientEmail, sendMeetingLinkDoctorEmail } from "@/lib/email"
-import { triggerNotificationWebhook, NotificationEvents } from "@/lib/notifications"
+import { webhooks } from "@/lib/webhooks"
+// 
+
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB()
 
+    const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL
     const { searchParams } = new URL(request.url)
     const reference = searchParams.get("reference")
     const trxref = searchParams.get("trxref")
@@ -20,6 +23,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/dashboard/patient?error=invalid_reference", request.url))
     }
 
+    // Check if payment was declined by checking Paystack API
+    const paystackResponse = await fetch(`${PAYSTACK_BASE_URL}/transaction/verify/${finalReference}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+      }
+    })
+    
+    const paystackData = await paystackResponse.json()
+    
+    if (!paystackData.status || paystackData.data.status !== 'success') {
+      // Payment failed or was declined
+      const appointment = await Appointment.findOne({ paymentId: finalReference })
+      if (appointment) {
+        appointment.paymentStatus = "failed"
+        appointment.status = "payment_failed"
+        await appointment.save()
+      }
+      return NextResponse.redirect(new URL("/dashboard/patient?error=payment_failed", request.url))
+    }
+
     const appointment = await Appointment.findOne({ paymentId: finalReference })
       .populate("patient").populate("doctor")
     
@@ -30,17 +53,46 @@ export async function GET(request: NextRequest) {
 
     // Admin will manually create Zoom meeting via button
 
-    // Update appointment status
+    // Update appointment status from payment_pending to confirmed
     appointment.paymentStatus = "paid"
     appointment.status = "confirmed"
+    
+    // Trigger webhook for automatic Zoom meeting generation
+    console.log('About to trigger payment success webhook for appointment:', appointment._id)
+    try {
+      const webhookUrl = process.env.PAYMENT_SUCCESS_WEBHOOK_URL || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/payment-success`
+      console.log('Webhook URL:', webhookUrl)
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          appointmentId: appointment._id.toString()
+        })
+      })
+      
+      console.log('Webhook response status:', response.status)
+      const responseData = await response.json()
+      console.log('Webhook response:', responseData)
+      
+      if (!response.ok) {
+        console.error('Webhook failed with status:', response.status, responseData)
+      }
+    } catch (error) {
+      console.error('Failed to trigger payment success webhook:', error)
+    }
+    
     await appointment.save()
+
+    // Now trigger notifications since payment is successful
+    webhooks.paymentSuccessful(appointment._id.toString())
+    webhooks.appointmentConfirmed(appointment._id.toString())
     
     console.log("Found and updated appointment:", appointment?._id)
 
-    // Trigger notification webhook
-    await triggerNotificationWebhook(NotificationEvents.PAYMENT_SUCCESSFUL, {
-      appointmentId: appointment._id.toString()
-    })
+
 
     // Send email notifications
     try {
@@ -68,15 +120,15 @@ export async function GET(request: NextRequest) {
         ])
         console.log("Appointment confirmation emails sent")
         
-        // Send meeting details if online
-        if (appointment.type === 'online' && appointment.meetingLink) {
+        // Send meeting details if video consultation
+        if (appointment.type === 'video' && appointment.zoomJoinUrl) {
           console.log('Sending meeting link emails...')
           try {
             await Promise.all([
               sendMeetingLinkPatientEmail(
                 appointment.patient.email,
                 `${appointment.patient.firstName} ${appointment.patient.lastName}`,
-                appointment.meetingLink,
+                appointment.zoomJoinUrl,
                 appointment.zoomPassword || '',
                 appointmentDate,
                 appointment.timeSlot
@@ -85,7 +137,7 @@ export async function GET(request: NextRequest) {
                 appointment.doctor.email,
                 `${appointment.doctor.firstName} ${appointment.doctor.lastName}`,
                 `${appointment.patient.firstName} ${appointment.patient.lastName}`,
-                appointment.meetingLink,
+                appointment.zoomJoinUrl,
                 appointment.zoomPassword || '',
                 appointmentDate,
                 appointment.timeSlot
